@@ -19,5 +19,5 @@ Add the dependency to your `pubspec.yaml`:
 dependencies:
   shared_utils:
     git:
-      url: https://github.com/your-username/shared_utils.git
+      url: https://github.com/AbberApp/shared_utils.git
       ref: main
