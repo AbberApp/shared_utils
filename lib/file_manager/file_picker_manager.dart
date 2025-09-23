@@ -29,14 +29,14 @@ class FilePickerManager {
           if (isAudio) {
             return file;
           } else {
-            showToast('Please select an audio file');
+            ToastWidget.showToast('Please select an audio file');
             return null;
           }
         }
       }
       return null;
     } catch (e) {
-      showToast('Error picking file: $e');
+      ToastWidget.showToast('Error picking file: $e');
       return null;
     }
   }

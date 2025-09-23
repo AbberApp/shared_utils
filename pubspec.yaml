@@ -18,6 +18,7 @@ dependencies:
   ua_client_hints: ^1.4.1
   intl: ^0.20.2
   url_launcher: ^6.3.2
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

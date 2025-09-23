@@ -53,7 +53,7 @@ class ImagePickerManager {
     }
 
     if (status.isPermanentlyDenied) {
-      showToast('يجب السماح للكاميرا من الإعدادات');
+      ToastWidget.showToast('يجب السماح للكاميرا من الإعدادات');
       // await openAppSettings();
       return false;
     }
@@ -61,7 +61,7 @@ class ImagePickerManager {
     final PermissionStatus result = await Permission.camera.request();
 
     if (result.isPermanentlyDenied) {
-      showToast('يجب السماح للكاميرا من الإعدادات');
+      ToastWidget.showToast('يجب السماح للكاميرا من الإعدادات');
       // await openAppSettings();
       return false;
     }
@@ -112,7 +112,7 @@ class ImagePickerManager {
     }
 
     if (status.isPermanentlyDenied) {
-      showToast('يجب السماح للوصول للصور من الإعدادات');
+      ToastWidget.showToast('يجب السماح للوصول للصور من الإعدادات');
       // await openAppSettings();
       return false;
     }
@@ -120,7 +120,7 @@ class ImagePickerManager {
     final PermissionStatus result = await permission.request();
 
     if (result.isPermanentlyDenied) {
-      showToast('يجب السماح للوصول للصور من الإعدادات');
+      ToastWidget.showToast('يجب السماح للوصول للصور من الإعدادات');
       // await openAppSettings();
       return false;
     }
@@ -140,7 +140,7 @@ class ImagePickerManager {
     final bool hasPermanentlyDenied = statuses.values.any((status) => status.isPermanentlyDenied);
 
     if (hasPermanentlyDenied) {
-      showToast('يجب السماح للوصول للصور من الإعدادات');
+      ToastWidget.showToast('يجب السماح للوصول للصور من الإعدادات');
       // await openAppSettings();
       return false;
     }
@@ -163,11 +163,11 @@ class ImagePickerManager {
         return File(image.path);
       } on PlatformException catch (e) {
         debugPrint('خطأ في اختيار الصورة: $e');
-        showToast('حدث خطأ أثناء اختيار الصورة');
+        ToastWidget.showToast('حدث خطأ أثناء اختيار الصورة');
         return null;
       }
     } else {
-      // showToast('يجب تحديد الصلاحيات');
+      // ToastWidget.showToast('يجب تحديد الصلاحيات');
 
       return null;
     }
@@ -194,11 +194,11 @@ class ImagePickerManager {
         return image;
       } on PlatformException catch (e) {
         debugPrint('خطأ في اختيار الصورة: $e');
-        showToast('حدث خطأ أثناء اختيار الصورة');
+        ToastWidget.showToast('حدث خطأ أثناء اختيار الصورة');
         return null;
       }
     } else {
-      showToast('يجب تحديد الصلاحيات');
+      ToastWidget.showToast('يجب تحديد الصلاحيات');
       return null;
     }
   }
@@ -238,7 +238,7 @@ class ImagePickerManager {
       return null;
     } catch (e) {
       debugPrint('خطأ في قص الصورة: $e');
-      showToast('حدث خطأ أثناء قص الصورة');
+      ToastWidget.showToast('حدث خطأ أثناء قص الصورة');
       return null;
     }
   }
@@ -250,11 +250,11 @@ class ImagePickerManager {
         return images;
       } on PlatformException catch (e) {
         debugPrint('خطأ في اختيار الصور: $e');
-        showToast('حدث خطأ أثناء اختيار الصور');
+        ToastWidget.showToast('حدث خطأ أثناء اختيار الصور');
         return null;
       }
     } else {
-      showToast('يجب تحديد الصلاحيات');
+      ToastWidget.showToast('يجب تحديد الصلاحيات');
       return null;
     }
   }
@@ -285,7 +285,7 @@ class ImagePickerManager {
   //         await openAppSettings();
   //       } else {
   //         // Permission is already granted or restricted
-  //         showToast('تم التصريح بالوصول للصور');
+  //         ToastWidget.showToast('تم التصريح بالوصول للصور');
   //       }
   //     },
   //   );
