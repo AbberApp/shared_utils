@@ -11,4 +11,4 @@ export 'utils/intl_phone_field_utils.dart';
 export 'utils/delay_handler.dart';
 export 'utils/app_constants.dart';
 
-export 'widgets/page_indicator_dot_widget.dart';
+export '/widgets/page_indicator_dot_widget.dart';
