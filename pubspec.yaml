@@ -1,6 +1,6 @@
 name: shared_utils
 description: "A new Flutter package project."
-version: 1.0.0
+version: 1.0.1
 homepage:
 
 environment:
@@ -19,6 +19,7 @@ dependencies:
   intl: ^0.20.2
   url_launcher: ^6.3.2
   connectivity_plus: ^7.0.0
+  dio: ^5.9.0
 
 dev_dependencies:
   flutter_test:
