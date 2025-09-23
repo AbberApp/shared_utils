@@ -1,39 +1,23 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# shared_utils
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
+A Flutter/Dart package that contains shared utilities and helper classes used across multiple projects.  
+It helps reduce code duplication by centralizing common logic such as:
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+- File management (save, read, delete files)
+- Connection status monitoring (online/offline detection)
+- General utilities (formatting, string helpers, etc.)
 
 ## Features
+- Easy to integrate into any Flutter or Dart project
+- Keeps your codebase clean and consistent
+- Works as a local package (via `path`) or as a remote dependency (via Git)
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+## Installation
+Add the dependency to your `pubspec.yaml`:
 
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
-
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
-```dart
-const like = 'sample';
-```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+```yaml
+dependencies:
+  shared_utils:
+    git:
+      url: https://github.com/your-username/shared_utils.git
+      ref: main
