@@ -5,6 +5,8 @@ class PageIndicatorDotWidget extends StatelessWidget {
     super.key,
     required this.controller,
     required this.count,
+    required this.dotColor,
+    required this.activeDotColor,
     this.onDotClicked,
     this.axisDirection = Axis.horizontal,
     this.spacing = 8.0,
@@ -12,8 +14,6 @@ class PageIndicatorDotWidget extends StatelessWidget {
     this.dotWidth = 8.0,
     this.expansionFactor = 32.0,
     this.duration = const Duration(milliseconds: 0),
-    required this.dotColor,
-    required this.activeDotColor,
   });
 
   final PageController controller;
@@ -44,7 +44,7 @@ class PageIndicatorDotWidget extends StatelessWidget {
     }
 
     final double totalWidth = _calculateTotalSize(true);
-  
+
     return SizedBox(
       width: totalWidth,
       child: Row(
@@ -81,7 +81,12 @@ class PageIndicatorDotWidget extends StatelessWidget {
 
       // إضافة spacing بين النقاط (ما عدا النقطة الأخيرة)
       if (i < count - 1) {
-        dots.add(SizedBox(width: isHorizontal ? spacing : 0, height: isHorizontal ? 0 : spacing));
+        dots.add(
+          SizedBox(
+            width: isHorizontal ? spacing : 0,
+            height: isHorizontal ? 0 : spacing,
+          ),
+        );
       }
     }
 
@@ -100,10 +105,15 @@ class PageIndicatorDotWidget extends StatelessWidget {
     final double animationValue = (1 - distance).clamp(0.0, 1.0);
 
     // تحريك سلس بين الأحجام
-    final double dotSize = dotHeight + (expansionFactor - dotHeight) * animationValue;
+    final double dotSize =
+        dotHeight + (expansionFactor - dotHeight) * animationValue;
 
     // تحريك سلس بين الألوان
-    final Color interpolatedColor = Color.lerp(dotColor, activeDotColor, animationValue)!;
+    final Color interpolatedColor = Color.lerp(
+      dotColor,
+      activeDotColor,
+      animationValue,
+    )!;
 
     return GestureDetector(
       onTap: onDotClicked,
