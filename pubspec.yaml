@@ -1,6 +1,6 @@
 name: shared_utils
 description: "A new Flutter package project."
-version: 1.0.1
+version: 1.0.2
 homepage:
 
 environment:
@@ -13,7 +13,7 @@ dependencies:
   file_picker: ^10.3.3
   image_picker: ^1.2.0
   fluttertoast: ^9.0.0
-  image_cropper: ^10.0.0+1
+  image_cropper: ^11.0.0
   permission_handler: ^12.0.1
   ua_client_hints: ^1.4.1
   intl: ^0.20.2
@@ -24,7 +24,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

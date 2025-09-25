@@ -70,12 +70,17 @@ String getFirstName(String fullName) {
   return fullName;
 }
 
-void launchWhatsApp({required String phoneNumber, String? id}) async {
+void launchWhatsApp({
+  required String phoneNumber,
+  String? id,
+  String? message,
+}) async {
   try {
     final userAgent = await userAgentClientHintsHeader();
 
     final String data =
         '''
+${message ?? ''}
 مراسلة الدعم الفني
 رقم المستخدم: ${id ?? 'مستخدم غير مسجل'}
 النظام: ${userAgent["Sec-CH-UA-Platform"].toString()}, ${userAgent["Sec-CH-UA-Model"].toString()}, ${userAgent["Sec-CH-UA-Arch"].toString()}
