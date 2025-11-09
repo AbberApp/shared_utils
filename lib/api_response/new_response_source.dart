@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'dart:io';
 import 'package:dio/dio.dart';
 
@@ -201,9 +200,9 @@ class ErrorHandler implements Exception {
         if (ResponseCode.isClientError(error.response?.statusCode ?? 0)) {
           return NewFailure(
             code: error.response?.statusCode ?? 0,
-            message: error.response?.data['message'],
+            message: jsonDecode(error.response?.data)['message'],
             fields: List<FieldFailure>.from(
-              error.response?.data['errors'].map(
+              jsonDecode(error.response?.data['errors']).map(
                 (e) => FieldFailure(field: e['field'], message: e['message']),
               ),
             ),
@@ -211,7 +210,7 @@ class ErrorHandler implements Exception {
         }
         return NewFailure(
           code: error.response?.statusCode ?? 0,
-          message: error.response?.data['message'],
+          message: jsonDecode(error.response?.data['message']),
         );
       default:
         return ErrorSource.unknown.getFailure();
@@ -240,65 +239,5 @@ class ErrorHandler implements Exception {
       );
     }
     return ErrorSource.unknown.getFailure();
-  }
-}
-
-List<Map<String, dynamic>> extractKeys(String data) {
-  try {
-    final dynamic jsonData = jsonDecode(data);
-    final List<Map<String, dynamic>> extractedKeys = [];
-
-    void extractData(dynamic value) {
-      if (value is Map<String, dynamic>) {
-        value.forEach((key, value) {
-          if (key != 'message') {
-            extractedKeys.add({key: value});
-            extractData(value);
-          }
-        });
-      } else if (value is List<dynamic>) {
-        for (var item in value) {
-          extractData(item);
-        }
-      }
-    }
-
-    extractData(jsonData);
-    return extractedKeys;
-  } catch (e) {
-    // يمكنك تخصيص معالجة الخطأ هنا
-    log('حدث خطأ أثناء معالجة البيانات: $e');
-    return []; // إرجاع قائمة فارغة في حالة حدوث خطأ
-  }
-}
-
-String extractTextFromData(int statsCode, String data) {
-  if (statsCode >= 500) {
-    return 'حدث خطا غير متوقع. حاول لاحقاً';
-  }
-
-  try {
-    final dynamic jsonData = jsonDecode(data);
-    final List<String> extractedText = [];
-
-    void extractData(dynamic value) {
-      if (value is Map<String, dynamic>) {
-        value.forEach((key, value) {
-          extractData(value);
-        });
-      } else if (value is List<dynamic>) {
-        for (var item in value) {
-          extractData(item);
-        }
-      } else if (value is String) {
-        extractedText.add(value.toString());
-      }
-    }
-
-    extractData(jsonData);
-
-    return extractedText.join('\n');
-  } catch (e) {
-    return 'حدث خطأ غير متوقع في تنسيق البيانات';
   }
 }
