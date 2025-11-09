@@ -42,6 +42,8 @@ class NewFailure {
 
   NewFailure({required this.code, this.message, this.fields});
 
+  String get toMessage => message ??  'حدث خطاء';
+
 }
 
 class FieldFailure {
