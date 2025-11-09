@@ -36,105 +36,133 @@ enum ErrorSource {
 }
 
 // امتداد يضمن توفير فشل (Failure) مناسب لكل نوع من ErrorSource
-@Deprecated('Use NewDataSourceExtension instead')
 extension DataSourceExtension on ErrorSource {
-  Failure getFailure() {
+  NewFailure getFailure() {
     // استخدام الـ switch لإرجاع فشل (Failure) المناسب بناءً على النوع (ErrorSource)
     switch (this) {
       case ErrorSource.sellerAccountNotFound:
-        return Failure(
-          ResponseCode.sellerAccountNotFound,
-          ResponseMessage.sellerAccountNotFound,
+        return NewFailure(
+          code: ResponseCode.sellerAccountNotFound,
+          message: ResponseMessage.sellerAccountNotFound,
         );
       case ErrorSource.successWithData:
-        return Failure(
-          ResponseCode.successWithData,
-          ResponseMessage.successWithData,
+        return NewFailure(
+          code: ResponseCode.successWithData,
+          message: ResponseMessage.successWithData,
         );
       case ErrorSource.successWithNoData:
-        return Failure(
-          ResponseCode.successWithNoData,
-          ResponseMessage.successWithNoData,
+        return NewFailure(
+          code: ResponseCode.successWithNoData,
+          message: ResponseMessage.successWithNoData,
         );
       case ErrorSource.badResponse:
-        return Failure(ResponseCode.badRequest, ResponseMessage.badResponse);
+        return NewFailure(
+          code: ResponseCode.badRequest,
+          message: ResponseMessage.badResponse,
+        );
       case ErrorSource.unauthorized:
-        return Failure(ResponseCode.unAuthorized, ResponseMessage.unAuthorized);
+        return NewFailure(
+          code: ResponseCode.unAuthorized,
+          message: ResponseMessage.unAuthorized,
+        );
       case ErrorSource.forbidden:
-        return Failure(ResponseCode.forbidden, ResponseMessage.forbidden);
+        return NewFailure(
+          code: ResponseCode.forbidden,
+          message: ResponseMessage.forbidden,
+        );
       case ErrorSource.notFound:
-        return Failure(ResponseCode.notFound, ResponseMessage.notFound);
+        return NewFailure(
+          code: ResponseCode.notFound,
+          message: ResponseMessage.notFound,
+        );
       case ErrorSource.conflict:
-        return Failure(ResponseCode.conflict, ResponseMessage.conflict);
+        return NewFailure(
+          code: ResponseCode.conflict,
+          message: ResponseMessage.conflict,
+        );
       case ErrorSource.internalServerError:
-        return Failure(
-          ResponseCode.internalServerError,
-          ResponseMessage.internalServerError,
+        return NewFailure(
+          code: ResponseCode.internalServerError,
+          message: ResponseMessage.internalServerError,
         );
       case ErrorSource.notImplemented:
-        return Failure(
-          ResponseCode.notImplemented,
-          ResponseMessage.notImplemented,
+        return NewFailure(
+          code: ResponseCode.notImplemented,
+          message: ResponseMessage.notImplemented,
         );
       case ErrorSource.badGateway:
-        return Failure(ResponseCode.badGateway, ResponseMessage.badGateway);
+        return NewFailure(
+          code: ResponseCode.badGateway,
+          message: ResponseMessage.badGateway,
+        );
       case ErrorSource.serviceUnavailable:
-        return Failure(
-          ResponseCode.serviceUnavailable,
-          ResponseMessage.serviceUnavailable,
+        return NewFailure(
+          code: ResponseCode.serviceUnavailable,
+          message: ResponseMessage.serviceUnavailable,
         );
       case ErrorSource.connectionError:
-        return Failure(
-          ResponseCode.gatewayTimeout,
-          ResponseMessage.connectionError,
+        return NewFailure(
+          code: ResponseCode.gatewayTimeout,
+          message: ResponseMessage.connectionError,
         );
       case ErrorSource.gatewayTimeout:
-        return Failure(
-          ResponseCode.gatewayTimeout,
-          ResponseMessage.gatewayTimeout,
+        return NewFailure(
+          code: ResponseCode.gatewayTimeout,
+          message: ResponseMessage.gatewayTimeout,
         );
       case ErrorSource.unknown:
-        return Failure(ResponseCode.unknown, ResponseMessage.unknownError);
+        return NewFailure(
+          code: ResponseCode.unknown,
+          message: ResponseMessage.unknownError,
+        );
       case ErrorSource.connectTimeout:
-        return Failure(
-          ResponseCode.connectTimeout,
-          ResponseMessage.connectTimeout,
+        return NewFailure(
+          code: ResponseCode.connectTimeout,
+          message: ResponseMessage.connectTimeout,
         );
       case ErrorSource.cancel:
-        return Failure(ResponseCode.cancel, ResponseMessage.cancel);
+        return NewFailure(
+          code: ResponseCode.cancel,
+          message: ResponseMessage.cancel,
+        );
       case ErrorSource.receiveTimeout:
-        return Failure(
-          ResponseCode.receiveTimeout,
-          ResponseMessage.receiveTimeout,
+        return NewFailure(
+          code: ResponseCode.receiveTimeout,
+          message: ResponseMessage.receiveTimeout,
         );
       case ErrorSource.sendTimeout:
-        return Failure(ResponseCode.sendTimeout, ResponseMessage.sendTimeout);
+        return NewFailure(
+          code: ResponseCode.sendTimeout,
+          message: ResponseMessage.sendTimeout,
+        );
       case ErrorSource.cacheError:
-        return Failure(ResponseCode.cacheError, ResponseMessage.cacheError);
+        return NewFailure(
+          code: ResponseCode.cacheError,
+          message: ResponseMessage.cacheError,
+        );
       case ErrorSource.noInternetConnection:
-        return Failure(
-          ResponseCode.noInternetConnection,
-          ResponseMessage.noInternetConnection,
+        return NewFailure(
+          code: ResponseCode.noInternetConnection,
+          message: ResponseMessage.noInternetConnection,
         );
       case ErrorSource.wrongPassword:
-        return Failure(
-          ResponseCode.wrongPassword,
-          ResponseMessage.wrongPassword,
+        return NewFailure(
+          code: ResponseCode.wrongPassword,
+          message: ResponseMessage.wrongPassword,
         );
       // أضف الحالة للاستثناء SocketException هنا
       case ErrorSource.socketException:
-        return Failure(
-          ResponseCode.socketException, // اختر رمز استجابة مناسب
-          ResponseMessage.socketException, // اختر رسالة خطأ مناسبة
+        return NewFailure(
+          code: ResponseCode.socketException, // اختر رمز استجابة مناسب
+          message: ResponseMessage.socketException, // اختر رسالة خطأ مناسبة
         );
     }
   }
 }
 
 // معالج الأخطاء
-@Deprecated('Use NewErrorHandler instead ')
 class ErrorHandler implements Exception {
-  late final Failure failure;
+  late final NewFailure failure;
 
   ErrorHandler();
 
@@ -149,7 +177,7 @@ class ErrorHandler implements Exception {
     }
   }
 
-  Failure _handleDioError(DioException error) {
+  NewFailure _handleDioError(DioException error) {
     switch (error.type) {
       case DioExceptionType.badCertificate:
         return ErrorSource.forbidden.getFailure();
@@ -170,11 +198,20 @@ class ErrorHandler implements Exception {
         if (error.response?.statusCode == ResponseCode.unAuthorized) {
           return ErrorSource.unauthorized.getFailure();
         }
-        return Failure(
-          error.response?.statusCode ?? 0,
-          extractTextFromData(error.response?.statusCode ?? 0, error.response?.data),
-          data: extractKeys(error.response?.data),
-          extraData: extraData(error.response?.data.toString() ?? ''),
+        if (ResponseCode.isClientError(error.response?.statusCode ?? 0)) {
+          return NewFailure(
+            code: error.response?.statusCode ?? 0,
+            message: error.response?.data['message'],
+            fields: List<FieldFailure>.from(
+              error.response?.data['errors'].map(
+                (e) => FieldFailure(field: e['field'], message: e['message']),
+              ),
+            ),
+          );
+        }
+        return NewFailure(
+          code: error.response?.statusCode ?? 0,
+          message: error.response?.data['message'],
         );
       default:
         return ErrorSource.unknown.getFailure();
@@ -191,15 +228,15 @@ class ErrorHandler implements Exception {
     }
   }
 
-  Failure _handleSocketError(SocketException error) {
+  NewFailure _handleSocketError(SocketException error) {
     return ErrorSource.socketException.getFailure();
   }
 
-  Failure _handleUnknownError(dynamic error) {
+  NewFailure _handleUnknownError(dynamic error) {
     if (error != null) {
-      return Failure(
-        ResponseCode.unknown,
-        error.toString().replaceAll('Exception:', ''),
+      return NewFailure(
+        code: ResponseCode.unknown,
+        message: error.toString().replaceAll('Exception:', ''),
       );
     }
     return ErrorSource.unknown.getFailure();
