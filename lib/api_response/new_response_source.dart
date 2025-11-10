@@ -202,7 +202,7 @@ class ErrorHandler implements Exception {
             code: error.response?.statusCode ?? 0,
             message: extraData(error.response?.data)['message'],
             fields:
-                (extraData(error.response?.data['errors']) as List<dynamic>?)
+                (extraData(error.response?.data)['errors'] as List<dynamic>?)
                     ?.map(
                       (e) => FieldFailure.fromJson(e as Map<String, dynamic>),
                     )
