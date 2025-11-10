@@ -200,17 +200,19 @@ class ErrorHandler implements Exception {
         if (ResponseCode.isClientError(error.response?.statusCode ?? 0)) {
           return NewFailure(
             code: error.response?.statusCode ?? 0,
-            message: jsonDecode(error.response?.data)['message'],
-            fields: List<FieldFailure>.from(
-              jsonDecode(error.response?.data['errors']).map(
-                (e) => FieldFailure(field: e['field'], message: e['message']),
-              ),
-            ),
+            message: extraData(error.response?.data)['message'],
+            fields:
+                (extraData(error.response?.data['errors']) as List<dynamic>?)
+                    ?.map(
+                      (e) => FieldFailure.fromJson(e as Map<String, dynamic>),
+                    )
+                    .toList() ??
+                [],
           );
         }
         return NewFailure(
           code: error.response?.statusCode ?? 0,
-          message: jsonDecode(error.response?.data['message']),
+          message: extraData(error.response?.data)['message'],
         );
       default:
         return ErrorSource.unknown.getFailure();
