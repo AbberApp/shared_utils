@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 
-import 'failure.dart';
+import 'new_failure.dart';
 import 'response_code.dart';
 import 'response_message.dart';
 
@@ -36,122 +36,122 @@ enum ErrorSource {
 
 // امتداد يضمن توفير فشل (Failure) مناسب لكل نوع من ErrorSource
 extension DataSourceExtension on ErrorSource {
-  NewFailure getFailure() {
+  Failure getFailure() {
     // استخدام الـ switch لإرجاع فشل (Failure) المناسب بناءً على النوع (ErrorSource)
     switch (this) {
       case ErrorSource.sellerAccountNotFound:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.sellerAccountNotFound,
           message: ResponseMessage.sellerAccountNotFound,
         );
       case ErrorSource.successWithData:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.successWithData,
           message: ResponseMessage.successWithData,
         );
       case ErrorSource.successWithNoData:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.successWithNoData,
           message: ResponseMessage.successWithNoData,
         );
       case ErrorSource.badResponse:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.badRequest,
           message: ResponseMessage.badResponse,
         );
       case ErrorSource.unauthorized:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.unAuthorized,
           message: ResponseMessage.unAuthorized,
         );
       case ErrorSource.forbidden:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.forbidden,
           message: ResponseMessage.forbidden,
         );
       case ErrorSource.notFound:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.notFound,
           message: ResponseMessage.notFound,
         );
       case ErrorSource.conflict:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.conflict,
           message: ResponseMessage.conflict,
         );
       case ErrorSource.internalServerError:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.internalServerError,
           message: ResponseMessage.internalServerError,
         );
       case ErrorSource.notImplemented:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.notImplemented,
           message: ResponseMessage.notImplemented,
         );
       case ErrorSource.badGateway:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.badGateway,
           message: ResponseMessage.badGateway,
         );
       case ErrorSource.serviceUnavailable:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.serviceUnavailable,
           message: ResponseMessage.serviceUnavailable,
         );
       case ErrorSource.connectionError:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.gatewayTimeout,
           message: ResponseMessage.connectionError,
         );
       case ErrorSource.gatewayTimeout:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.gatewayTimeout,
           message: ResponseMessage.gatewayTimeout,
         );
       case ErrorSource.unknown:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.unknown,
           message: ResponseMessage.unknownError,
         );
       case ErrorSource.connectTimeout:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.connectTimeout,
           message: ResponseMessage.connectTimeout,
         );
       case ErrorSource.cancel:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.cancel,
           message: ResponseMessage.cancel,
         );
       case ErrorSource.receiveTimeout:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.receiveTimeout,
           message: ResponseMessage.receiveTimeout,
         );
       case ErrorSource.sendTimeout:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.sendTimeout,
           message: ResponseMessage.sendTimeout,
         );
       case ErrorSource.cacheError:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.cacheError,
           message: ResponseMessage.cacheError,
         );
       case ErrorSource.noInternetConnection:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.noInternetConnection,
           message: ResponseMessage.noInternetConnection,
         );
       case ErrorSource.wrongPassword:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.wrongPassword,
           message: ResponseMessage.wrongPassword,
         );
       // أضف الحالة للاستثناء SocketException هنا
       case ErrorSource.socketException:
-        return NewFailure(
+        return Failure(
           code: ResponseCode.socketException, // اختر رمز استجابة مناسب
           message: ResponseMessage.socketException, // اختر رسالة خطأ مناسبة
         );
@@ -161,7 +161,7 @@ extension DataSourceExtension on ErrorSource {
 
 // معالج الأخطاء
 class ErrorHandler implements Exception {
-  late final NewFailure failure;
+  late final Failure failure;
 
   ErrorHandler();
 
@@ -176,7 +176,7 @@ class ErrorHandler implements Exception {
     }
   }
 
-  NewFailure _handleDioError(DioException error) {
+  Failure _handleDioError(DioException error) {
     switch (error.type) {
       case DioExceptionType.badCertificate:
         return ErrorSource.forbidden.getFailure();
@@ -198,7 +198,7 @@ class ErrorHandler implements Exception {
           return ErrorSource.unauthorized.getFailure();
         }
         if (ResponseCode.isClientError(error.response?.statusCode ?? 0)) {
-          return NewFailure(
+          return Failure(
             code: error.response?.statusCode ?? 0,
             message: extraData(error.response?.data)['message'],
             fields:
@@ -210,7 +210,7 @@ class ErrorHandler implements Exception {
                 [],
           );
         }
-        return NewFailure(
+        return Failure(
           code: error.response?.statusCode ?? 0,
           message: extraData(error.response?.data)['message'],
         );
@@ -229,13 +229,13 @@ class ErrorHandler implements Exception {
     }
   }
 
-  NewFailure _handleSocketError(SocketException error) {
+  Failure _handleSocketError(SocketException error) {
     return ErrorSource.socketException.getFailure();
   }
 
-  NewFailure _handleUnknownError(dynamic error) {
+  Failure _handleUnknownError(dynamic error) {
     if (error != null) {
-      return NewFailure(
+      return Failure(
         code: ResponseCode.unknown,
         message: error.toString().replaceAll('Exception:', ''),
       );
