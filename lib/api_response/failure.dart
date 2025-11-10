@@ -1,3 +1,4 @@
+@Deprecated('Use NewFailure instead')
 class Failure {
   final int code;
   final String message;
