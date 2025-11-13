@@ -2,9 +2,9 @@
 class Failure {
   final int code;
   final String? message;
-  final List<FieldFailure>? fields;
+  final List<FieldFailure> fields;
 
-  Failure({required this.code, this.message, this.fields});
+  Failure({required this.code, this.message, this.fields = const []});
 
   String get toMessage => message ??  'حدث خطاء';
 
@@ -16,7 +16,7 @@ class Failure {
           ? (json['fields'] as List)
               .map((e) => FieldFailure.fromJson(e))
               .toList()
-          : null,
+          : [],
     );
   }
 
