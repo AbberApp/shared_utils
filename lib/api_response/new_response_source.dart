@@ -177,6 +177,13 @@ class ErrorHandler implements Exception {
   }
 
   Failure _handleDioError(DioException error) {
+    if (error.response?.data.toString().contains('message') == true) {
+      return Failure.fromJson(
+        error.response?.statusCode ?? 0,
+        extraData(error.response?.data),
+      );
+    }
+
     switch (error.type) {
       case DioExceptionType.badCertificate:
         return ErrorSource.forbidden.getFailure();
@@ -198,22 +205,12 @@ class ErrorHandler implements Exception {
           return ErrorSource.unauthorized.getFailure();
         }
         if (ResponseCode.isClientError(error.response?.statusCode ?? 0)) {
-          return Failure(
-            code: error.response?.statusCode ?? 0,
-            message: extraData(error.response?.data)['message'],
-            fields:
-                (extraData(error.response?.data)['errors'] as List<dynamic>?)
-                    ?.map(
-                      (e) => FieldFailure.fromJson(e as Map<String, dynamic>),
-                    )
-                    .toList() ??
-                [],
+          return Failure.fromJson(
+            error.response?.statusCode ?? 0,
+            extraData(error.response?.data),
           );
         }
-        return Failure(
-          code: error.response?.statusCode ?? 0,
-          message: extraData(error.response?.data)['message'],
-        );
+        return ErrorSource.badResponse.getFailure();
       default:
         return ErrorSource.unknown.getFailure();
     }

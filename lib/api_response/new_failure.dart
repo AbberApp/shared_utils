@@ -8,6 +8,18 @@ class Failure {
 
   String get toMessage => message ??  'حدث خطاء';
 
+  factory Failure.fromJson(int code, Map<String, dynamic> json) {
+    return Failure(
+      code: code,
+      message: json['message'],
+      fields: json['fields'] != null
+          ? (json['fields'] as List)
+              .map((e) => FieldFailure.fromJson(e))
+              .toList()
+          : null,
+    );
+  }
+
 }
 
 class FieldFailure {
