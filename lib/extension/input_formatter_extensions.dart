@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import '../utils/functions.dart';
 import '../utils/intl_phone_field_utils.dart';
 
-
 class CardExpiryInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(
@@ -19,23 +18,62 @@ class CardExpiryInputFormatter extends TextInputFormatter {
       );
     }
 
-    final String formattedText = _formatExpiry(newText);
+    // إزالة أي محارف غير رقمية
+    final String digitsOnly = newText.replaceAll(RegExp(r'[^0-9]'), '');
+
+    if (digitsOnly.isEmpty) {
+      return newValue.copyWith(
+        text: '',
+        selection: const TextSelection.collapsed(offset: 0),
+      );
+    }
+
+    // معالجة الشهر
+    String processedText = digitsOnly;
+
+    if (digitsOnly.length == 1) {
+      // إذا كان الرقم الأول بين 2-9، أضف 0 قبله
+      int firstDigit = int.parse(digitsOnly);
+      if (firstDigit >= 2 && firstDigit <= 9) {
+        processedText = '0$digitsOnly';
+      }
+    } else if (digitsOnly.length >= 2) {
+      // التحقق من أن الشهر لا يتجاوز 12
+      int month = int.parse(digitsOnly.substring(0, 2));
+
+      if (month > 12) {
+        // إذا كان الشهر أكبر من 12، ارجع للقيمة القديمة
+        return oldValue;
+      }
+
+      // إذا كان الشهر 00، ارجع للقيمة القديمة
+      if (month == 0) {
+        return oldValue;
+      }
+    }
+
+    // حد أقصى 4 أرقام (MM/YY)
+    if (processedText.length > 4) {
+      processedText = processedText.substring(0, 4);
+    }
+
+    final String formattedText = _formatExpiry(processedText);
     return TextEditingValue(
       text: formattedText,
       selection: TextSelection.collapsed(offset: formattedText.length),
     );
   }
 
-  String _formatExpiry(String input) {
-    input = input.replaceAll(RegExp(r'\D'), ''); // Remove non-digits
-    if (input.length > 4) {
-      input = input.substring(0, 4); // Truncate to 4 digits
+  String _formatExpiry(String digits) {
+    if (digits.length <= 2) {
+      return digits;
     }
-    if (input.length >= 3) {
-      return '${input.substring(0, 2)}/${input.substring(2)}';
-    } else {
-      return input;
-    }
+
+    // تنسيق MM/YY
+    final String month = digits.substring(0, 2);
+    final String year = digits.substring(2);
+
+    return '$month/$year';
   }
 }
 
@@ -88,7 +126,8 @@ class AllowNumbersFormatter extends TextInputFormatter {
     // إذا كان العدد العشري مفعل
     if (enubleDecimal) {
       // السماح بالأرقام والنقطة العشرية، ولكن فقط نقطة واحدة
-      if (persianInput.contains(RegExp(r'[^\d.]')) || (persianInput.split('.').length > 2)) {
+      if (persianInput.contains(RegExp(r'[^\d.]')) ||
+          (persianInput.split('.').length > 2)) {
         return oldValue;
       }
 
@@ -167,7 +206,9 @@ class PhoneNumberFormatter extends TextInputFormatter {
 
         // حساب الفرق في الطول وتعديل موضع المؤشر
         final int lengthDifference = originalLength - text.length;
-        cursorPosition = cursorPosition > lengthDifference ? cursorPosition - lengthDifference : 0;
+        cursorPosition = cursorPosition > lengthDifference
+            ? cursorPosition - lengthDifference
+            : 0;
         cursorChanged = true;
       }
     }
@@ -191,7 +232,6 @@ class NoEnglishLettersInputFormatter {
     RegExp(r'[A-Za-z]'), // يمنع الأحرف الإنجليزية فقط
   );
 }
-
 
 /// Formatter يقبل الأحرف والأرقام الإنجليزية فقط ويحول الأحرف الصغيرة إلى كبيرة
 class UpperCaseEnglishInputFormatter extends TextInputFormatter {
