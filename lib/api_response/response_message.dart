@@ -1,37 +1,52 @@
 class ResponseMessage {
   const ResponseMessage._();
 
-  static const String successWithData = 'تم بنجاح مع البيانات';
-  static const String successWithNoData = 'تم بنجاح بدون بيانات';
-  static const String badResponse = 'طلب غير صالح';
-  static const String unAuthorized = 'غير مصرح بالدخول';
-  static const String forbidden = 'الحساب غير مفعل';
-  static const String notFound = 'غير موجود';
-  static const String conflict = 'تعارض';
-  static const String internalServerError = 'خطأ داخلي في الخادم';
-  static const String notImplemented = 'غير مفعل';
-  static const String badGateway = 'بوابة خاطئة';
-  static const String serviceUnavailable = 'الخدمة غير متاحة';
-  static const String gatewayTimeout = 'انتهت مهلة البوابة';
-  static const String unknown = 'غير معروف';
-  static const String connectTimeout = 'انتهت مهلة الاتصال';
+  static const String successWithData =
+      'تم تنفيذ العملية بنجاح وتم إرفاق البيانات اللازمة.';
+  static const String successWithNoData =
+      'تم تنفيذ العملية بنجاح، دون وجود بيانات إضافية.';
+  static const String badResponse =
+      'الطلب غير صالح. يُرجى التحقق من صحة البيانات المُدخلة.';
+  static const String unAuthorized =
+      'غير مصرح لك بالوصول. يُرجى تسجيل الدخول أولاً.';
+  static const String forbidden =
+      'لا يمكن تنفيذ الطلب، الحساب غير مُفعّل.';
+  static const String notFound =
+      'عذراً، لم نتمكن من العثور على العنصر المطلوب.';
+  static const String conflict =
+      'لا يمكن إتمام العملية بسبب وجود تعارض.';
+  static const String internalServerError =
+      'حدث خطأ داخلي في الخادم. يُرجى المحاولة لاحقاً.';
+  static const String notImplemented =
+      'هذه الوظيفة غير متاحة حالياً.';
+  static const String badGateway =
+      'استجابة غير صحيحة من الخادم.';
+  static const String serviceUnavailable =
+      'الخدمة غير متاحة في الوقت الحالي. يُرجى المحاولة لاحقاً.';
+  static const String gatewayTimeout =
+      'انتهت مهلة الاستجابة من الخادم.';
+  static const String unknown =
+      'حدث خطأ غير متوقع.';
+  static const String connectTimeout =
+      'انتهت مهلة الاتصال بالخادم.';
   static const String connectionError =
-      'حدث خطأ أثناء محاولة الاتصال بالخادم. الرجاء التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى في وقت لاحق.';
-
-  static const String cancel = 'تم الإلغاء';
-  static const String receiveTimeout = 'انتهت مهلة الاستقبال';
-  static const String sendTimeout = 'انتهت مهلة الإرسال';
-  static const String cacheError = 'خطأ في التخزين المؤقت';
-  static const String noInternetConnection = 'لا يوجد اتصال بالإنترنت';
-  static const String wrongPassword = 'كلمة مرور خاطئة';
-
-  // رسالة خطأ لخطأ غير معروف
+      'تعذّر الاتصال بالخادم. يُرجى التحقق من اتصالك بالإنترنت والمحاولة لاحقاً.';
+  static const String cancel =
+      'تم إلغاء العملية.';
+  static const String receiveTimeout =
+      'انتهت مهلة استلام البيانات.';
+  static const String sendTimeout =
+      'انتهت مهلة إرسال البيانات.';
+  static const String cacheError =
+      'حدث خطأ أثناء الوصول إلى البيانات المخزّنة.';
+  static const String noInternetConnection =
+      'لا يوجد اتصال بالإنترنت. يُرجى التحقق من الشبكة.';
+  static const String wrongPassword =
+      'كلمة المرور غير صحيحة.';
   static const String unknownError =
-      'حدث خطأ غير معروف. يرجى المحاولة مرة أخرى.';
-
+      'حدث خطأ غير معروف. يُرجى المحاولة مرة أخرى.';
   static const String socketException =
-      'حدث خطأ في الاتصال بالخادم. الرجاء التحقق من الاتصال بالإنترنت والمحاولة مرة أخرى.';
-
+      'حدث خلل في الاتصال بالخادم. يُرجى التحقق من الاتصال بالإنترنت والمحاولة لاحقاً.';
   static const String sellerAccountNotFound =
-      'لا يمكن تسجيل الدخول لحساب المعبر';
+      'لا يمكن تسجيل الدخول إلى حساب المُعَبِّر.';
 }
