@@ -65,7 +65,7 @@ class CardExpiryInputFormatter extends TextInputFormatter {
   }
 
   String _formatExpiry(String digits) {
-    if (digits.length <= 2) {
+    if (digits.length < 2) {
       return digits;
     }
 
