@@ -3,7 +3,7 @@ library shared_utils;
 export 'file_manager/file_picker_manager.dart';
 export 'file_manager/image_picker_manager.dart';
 
-export 'app_update_manager/check_app_update_manager.dart';
+export 'update_manager/app_update_checker.dart';
 
 export 'network/connection_status.dart';
 

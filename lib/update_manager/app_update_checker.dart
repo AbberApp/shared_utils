@@ -5,10 +5,10 @@ import 'package:app_version_update/app_version_update.dart';
 import 'package:app_version_update/data/models/app_version_result.dart';
 import 'package:in_app_update/in_app_update.dart';
 
-class CheckAppUpdateManager {
-  CheckAppUpdateManager._();
+class AppUpdateChecker {
+  AppUpdateChecker._();
 
-  static final CheckAppUpdateManager instance = CheckAppUpdateManager._();
+  static final AppUpdateChecker instance = AppUpdateChecker._();
 
   Future<void> checkForUpdate({
     required String storeUrl,
