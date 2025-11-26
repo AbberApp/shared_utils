@@ -1,6 +1,6 @@
 name: shared_utils
 description: "A new Flutter package project."
-version: 1.2.4
+version: 1.2.5
 homepage:
 
 
@@ -12,8 +12,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # file manager
   file_picker: ^10.3.3
   image_picker: ^1.2.0
+
+  # network
+  dio: ^5.9.0
+
   fluttertoast: ^9.0.0
   image_cropper: ^11.0.0
   permission_handler: ^12.0.1
@@ -21,7 +27,10 @@ dependencies:
   intl: ^0.20.2
   url_launcher: ^6.3.2
   connectivity_plus: ^7.0.0
-  dio: ^5.9.0
+
+  # app store
+  app_version_update: ^6.1.0
+  in_app_update: ^4.2.5
 
 
 dev_dependencies:

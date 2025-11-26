@@ -3,6 +3,8 @@ library shared_utils;
 export 'file_manager/file_picker_manager.dart';
 export 'file_manager/image_picker_manager.dart';
 
+export 'app_update_manager/check_app_update_manager.dart';
+
 export 'network/connection_status.dart';
 
 export 'api_response/failure.dart';
@@ -19,3 +21,5 @@ export 'utils/app_constants.dart';
 
 export '/widgets/page_indicator_dot_widget.dart';
 export '/widgets/toast_widget.dart';
+
+
