@@ -1,6 +1,6 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
-version: 2.0.0
+version: 2.0.1
 homepage: https://github.com/AbberApp/shared_utils
 
 environment:
@@ -29,7 +29,7 @@ dependencies:
   ua_client_hints: ^1.4.1
 
   # Device Info
-  device_info_plus: ^11.4.0
+  device_info_plus: ^12.3.0
   package_info_plus: ^8.3.0
 
   # App Update
