@@ -1,25 +1,70 @@
-library shared_utils;
+/// مكتبة أدوات مشتركة للمشاريع
+library;
 
-export 'file_manager/file_picker_manager.dart';
-export 'file_manager/image_picker_manager.dart';
+// ═══════════════════════════════════════════════════════════════════════════
+// Network - الشبكة
+// ═══════════════════════════════════════════════════════════════════════════
 
-export 'update_manager/app_update_checker.dart';
+// Connectivity - حالة الاتصال
+export 'src/network/connectivity/connection_status.dart';
 
-export 'network/connection_status.dart';
+// API Models - نماذج API
+export 'src/network/api/models/failure.dart';
+export 'src/network/api/models/response_code.dart';
+export 'src/network/api/models/response_message.dart';
 
-export 'api_response/failure.dart';
-export 'api_response/response_code.dart';
-export 'api_response/response_handler.dart';
-export 'api_response/response_message.dart';
-export 'api_response/response_source.dart';
+// API Handlers - معالجات API
+export 'src/network/api/handlers/error_handler.dart';
+export 'src/network/api/handlers/response_handler.dart';
 
-export 'utils/functions.dart';
-export 'utils/permission_handler.dart';
-export 'utils/intl_phone_field_utils.dart';
-export 'utils/delay_handler.dart';
-export 'utils/app_constants.dart';
+// ═══════════════════════════════════════════════════════════════════════════
+// Extensions - الإضافات
+// ═══════════════════════════════════════════════════════════════════════════
 
-export '/widgets/page_indicator_dot_widget.dart';
-export '/widgets/toast_widget.dart';
+export 'src/extensions/date/date_format_extension.dart';
+export 'src/extensions/string/string_extension.dart';
+export 'src/extensions/number/currency_extension.dart';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// Formatters - المنسقات
+// ═══════════════════════════════════════════════════════════════════════════
 
+export 'src/formatters/number_formatter.dart';
+export 'src/formatters/card_formatter.dart';
+export 'src/formatters/text_formatter.dart';
+export 'src/formatters/phone_formatter.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Pickers - منتقيات الملفات
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/pickers/file/file_picker_manager.dart';
+export 'src/pickers/image/image_picker_manager.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Widgets - عناصر الواجهة
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/widgets/toast.dart';
+export 'src/widgets/page_indicator.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Device Info - معلومات الجهاز
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/device_info/device_info_manager.dart';
+export 'src/device_info/models/device_info_model.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Services - الخدمات
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/services/update/app_update_checker.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Utils - الأدوات المساعدة
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/utils/helpers.dart';
+export 'src/utils/delay_handler.dart';
+export 'src/utils/phone/intl_phone_utils.dart';
