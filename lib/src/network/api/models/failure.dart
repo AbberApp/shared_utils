@@ -13,7 +13,7 @@ class Failure {
   String get displayMessage => message ?? 'حدث خطأ';
 
   factory Failure.fromJson(int code, Map<String, dynamic> json) {
-    String error = 'حدث خطاء';
+    String? error;
     if (json['message'] != null) {
       error = json['message'] as String;
     }
