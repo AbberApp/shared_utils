@@ -43,7 +43,7 @@ class DeviceInfoModel {
   Map<String, String> toFlatMap() {
     return {
       // App
-      'app_name': app.name,
+      // 'app_name': app.name, // قد يحتوي على مسافات أو أحرف خاصة  
       'app_version': app.version,
       'app_build': app.buildNumber,
       'app_package': app.packageName,
