@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:persistent_device_id/persistent_device_id.dart';
 
 import 'models/device_info_model.dart';
 
@@ -116,6 +117,9 @@ class DeviceInfoManager {
     Size? screenSize,
   }) async {
     try {
+      // الحصول على المعرف الثابت أولاً (Android/iOS فقط)
+      final persistentId = await _getPersistentId();
+
       final results = await Future.wait([
         _getAppInfo(),
         _getDeviceDetails(),
@@ -123,6 +127,7 @@ class DeviceInfoManager {
       ]);
 
       _deviceInfo = DeviceInfoModel(
+        persistentId: persistentId,
         app: results[0] as AppInfo,
         device: results[1] as DeviceDetails,
         system: results[2] as SystemInfo,
@@ -146,6 +151,7 @@ class DeviceInfoManager {
 
     final window = PlatformDispatcher.instance.views.first;
     _deviceInfo = DeviceInfoModel(
+      persistentId: _deviceInfo!.persistentId,
       app: _deviceInfo!.app,
       device: _deviceInfo!.device,
       system: _deviceInfo!.system,
@@ -168,6 +174,7 @@ class DeviceInfoManager {
     newExtra[key] = value;
 
     _deviceInfo = DeviceInfoModel(
+      persistentId: _deviceInfo!.persistentId,
       app: _deviceInfo!.app,
       device: _deviceInfo!.device,
       system: _deviceInfo!.system,
@@ -197,6 +204,17 @@ class DeviceInfoManager {
       buildNumber: packageInfo.buildNumber,
       packageName: packageInfo.packageName,
     );
+  }
+
+  /// الحصول على المعرف الثابت الذي يبقى بعد حذف التطبيق
+  /// يستخدم MediaDrm على Android و Keychain على iOS
+  ///
+  /// **ملاحظة**: هذه الدالة تُرجع قيمة دائماً على Android و iOS
+  /// المكتبة تستخدم fallback تلقائي (UUID) إذا فشل MediaDrm أو Keychain
+  Future<String> _getPersistentId() async {
+    final id = await PersistentDeviceId.getDeviceId();
+    // المكتبة تضمن إرجاع قيمة دائماً (UUID كـ fallback)
+    return id.toString();
   }
 
   Future<DeviceDetails> _getDeviceDetails() async {

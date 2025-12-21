@@ -18,6 +18,15 @@ class DeviceInfoModel {
   // وقت جمع المعلومات
   final DateTime collectedAt;
 
+  /// معرف الجهاز الثابت الذي يبقى حتى بعد حذف التطبيق
+  ///
+  /// - على Android: يستخدم MediaDrm (يبقى حتى بعد Factory Reset غالباً)
+  /// - على iOS: يستخدم Keychain (يبقى بعد حذف التطبيق)
+  ///
+  /// **ملاحظة**: مضمون أن يُرجع قيمة على Android و iOS
+  /// المكتبة تستخدم UUID كـ fallback إذا فشل MediaDrm أو Keychain
+  final String persistentId;
+
   const DeviceInfoModel({
     required this.app,
     required this.device,
@@ -25,11 +34,13 @@ class DeviceInfoModel {
     required this.screen,
     this.extra = const {},
     required this.collectedAt,
+    required this.persistentId,
   });
 
   /// تحويل إلى Map لإرسالها للسيرفر
   Map<String, dynamic> toJson() {
     return {
+      'persistent_id': persistentId,
       'app': app.toJson(),
       'device': device.toJson(),
       'system': system.toJson(),
@@ -42,8 +53,11 @@ class DeviceInfoModel {
   /// تحويل إلى Map مسطح (مفيد للـ headers أو analytics)
   Map<String, String> toFlatMap() {
     return {
+      // Persistent ID
+      'persistent_id': persistentId,
+
       // App
-      // 'app_name': app.name, // قد يحتوي على مسافات أو أحرف خاصة  
+      // 'app_name': app.name, // قد يحتوي على مسافات أو أحرف خاصة
       'app_version': app.version,
       'app_build': app.buildNumber,
       'app_package': app.packageName,
