@@ -60,6 +60,7 @@ class DeviceInfoModel {
       // 'app_name': app.name, // قد يحتوي على مسافات أو أحرف خاصة
       'app_version': app.version,
       'app_build': app.buildNumber,
+      'app_full_version': app.fullVersion,
       'app_package': app.packageName,
 
       // Device
