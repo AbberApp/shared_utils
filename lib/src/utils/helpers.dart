@@ -24,6 +24,9 @@ Future<void> launchWhatsApp({
   String? userId,
   String? message,
 }) async {
+  // إزالة علامة + وأي رموز أخرى من رقم الهاتف (wa.me يتطلب أرقام فقط)
+  final cleanedNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
+
   try {
     final userAgent = await userAgentClientHintsHeader();
 
@@ -35,11 +38,13 @@ ${message ?? ''}
 نسخة التطبيق: ${userAgent["Sec-CH-UA-Full-Version"]}
 ''';
 
-    final url = Uri.parse('https://wa.me/$phoneNumber?text=$data');
-    await launchUrl(url);
+    // ترميز النص للرابط
+    final encodedText = Uri.encodeComponent(data);
+    final url = Uri.parse('https://wa.me/$cleanedNumber?text=$encodedText');
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   } catch (_) {
-    final url = Uri.parse('https://wa.me/$phoneNumber');
-    await launchUrl(url);
+    final url = Uri.parse('https://wa.me/$cleanedNumber');
+    await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 }
 
