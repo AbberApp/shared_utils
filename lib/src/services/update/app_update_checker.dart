@@ -12,6 +12,9 @@ class AppUpdateChecker {
 
   static final instance = AppUpdateChecker._();
 
+  /// هل تم العثور على تحديث ويجب منع الانتقال لشاشات أخرى
+  bool updateRequired = false;
+
   final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 10),
@@ -51,6 +54,7 @@ class AppUpdateChecker {
 
     if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
       log('Update available - Android', name: 'AppUpdateChecker');
+      updateRequired = true;
       onUpdateAvailable(storeUrl);
     }
   }
@@ -104,6 +108,7 @@ class AppUpdateChecker {
       final updateAvailable = _isUpdateAvailable(localVersion, storeVersion);
 
       if (updateAvailable) {
+        updateRequired = true;
         onUpdateAvailable(storeUrl);
       }
     } catch (e) {
