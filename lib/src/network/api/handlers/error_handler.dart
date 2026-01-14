@@ -104,11 +104,24 @@ class ErrorHandler implements Exception {
 
   Failure _handleDioError(DioException error) {
     // محاولة استخراج الرسالة من الاستجابة
-    if (error.response?.data?.toString().contains('message') == true) {
-      return Failure.fromJson(
-        error.response?.statusCode ?? 0,
-        _parseResponseData(error.response?.data),
-      );
+    final responseData = error.response?.data;
+    final statusCode = error.response?.statusCode ?? 0;
+
+    if (responseData != null) {
+      // // إذا كانت الاستجابة نصاً مباشراً
+      // if (responseData is String && responseData.isNotEmpty) {
+      //   // محاولة تحليلها كـ JSON
+      //   final parsed = _parseResponseData(responseData);
+      //   if (parsed.isNotEmpty) {
+      //     return Failure.fromJson(statusCode, parsed);
+      //   }
+      //   // إذا لم تكن JSON، استخدمها كرسالة مباشرة
+      //   return Failure(code: statusCode, message: responseData);
+      // }
+      // إذا كانت Map
+      if (responseData is Map<String, dynamic> && responseData.isNotEmpty) {
+        return Failure.fromJson(statusCode, responseData);
+      }
     }
 
     switch (error.type) {

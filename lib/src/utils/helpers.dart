@@ -27,6 +27,7 @@ Future<void> launchWhatsApp({
   // إزالة علامة + وأي رموز أخرى من رقم الهاتف (wa.me يتطلب أرقام فقط)
   final cleanedNumber = phoneNumber.replaceAll(RegExp(r'[^\d]'), '');
 
+  String? encodedText;
   try {
     final userAgent = await userAgentClientHintsHeader();
 
@@ -37,15 +38,24 @@ ${message ?? ''}
 النظام: ${userAgent["Sec-CH-UA-Platform"]}, ${userAgent["Sec-CH-UA-Model"]}, ${userAgent["Sec-CH-UA-Arch"]}
 نسخة التطبيق: ${userAgent["Sec-CH-UA-Full-Version"]}
 ''';
+    encodedText = Uri.encodeComponent(data);
+  } catch (_) {}
 
-    // ترميز النص للرابط
-    final encodedText = Uri.encodeComponent(data);
-    final url = Uri.parse('https://wa.me/$cleanedNumber?text=$encodedText');
-    await launchUrl(url, mode: LaunchMode.externalApplication);
-  } catch (_) {
-    final url = Uri.parse('https://wa.me/$cleanedNumber');
-    await launchUrl(url, mode: LaunchMode.externalApplication);
+  // محاولة فتح تطبيق واتساب مباشرة (أفضل لـ iOS)
+  final whatsappUri = Uri.parse(
+    'whatsapp://send?phone=$cleanedNumber${encodedText != null ? '&text=$encodedText' : ''}',
+  );
+
+  if (await canLaunchUrl(whatsappUri)) {
+    await launchUrl(whatsappUri);
+    return;
   }
+
+  // fallback إلى wa.me
+  final webUri = Uri.parse(
+    'https://wa.me/$cleanedNumber${encodedText != null ? '?text=$encodedText' : ''}',
+  );
+  await launchUrl(webUri, mode: LaunchMode.externalApplication);
 }
 
 /// تحويل الأرقام العربية إلى إنجليزية (إعادة تصدير للتوافقية)
