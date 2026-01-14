@@ -13,16 +13,16 @@ class Failure {
     if (json['message'] != null && json['message'].isNotEmpty) {
       error = json['message'] as String;
     }
-    if (json['error'] != null) {
+    if (json['error'] != null && json['error'].isNotEmpty) {
       error = json['error'] as String;
     }
-    if (json['details'] != null) {
+    if (json['details'] != null && json['details'].isNotEmpty) {
       error = json['details'] as String;
     }
-    if (json['detail'] != null) {
+    if (json['detail'] != null && json['detail'].isNotEmpty) {
       error = json['detail'] as String;
     }
-    if (json['errors'] != null) {
+    if (json['errors'] != null && json['errors'].isNotEmpty) {
       error = json['errors'] as String;
     }
 
