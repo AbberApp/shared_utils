@@ -91,45 +91,16 @@ class _Dot extends StatefulWidget {
   State<_Dot> createState() => _DotState();
 }
 
-class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _sizeAnimation;
-  late Animation<Color?> _colorAnimation;
-
-  double _previousPage = 0;
+class _DotState extends State<_Dot> {
+  double _animationValue = 0;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
+    _animationValue = _calculateAnimationValue(
+      widget.controller.initialPage.toDouble(),
     );
-
-    _previousPage = widget.controller.initialPage.toDouble();
-    _setupAnimations(_calculateAnimationValue(_previousPage));
-
     widget.controller.addListener(_onPageScroll);
-  }
-
-  void _setupAnimations(double initialValue) {
-    _sizeAnimation = Tween<double>(
-      begin: widget.dotSize,
-      end: widget.expandedSize,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _colorAnimation = ColorTween(
-      begin: widget.dotColor,
-      end: widget.activeDotColor,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _animationController.value = initialValue;
   }
 
   double _calculateAnimationValue(double currentPage) {
@@ -140,11 +111,12 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   void _onPageScroll() {
     if (!widget.controller.hasClients) return;
 
-    final currentPage = widget.controller.page ?? _previousPage;
+    final currentPage = widget.controller.page ?? 0;
     final newValue = _calculateAnimationValue(currentPage);
 
-    _animationController.value = newValue;
-    _previousPage = currentPage;
+    if (_animationValue != newValue) {
+      setState(() => _animationValue = newValue);
+    }
   }
 
   @override
@@ -159,30 +131,28 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     widget.controller.removeListener(_onPageScroll);
-    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, _) {
-        final currentSize = _sizeAnimation.value;
-        final currentColor = _colorAnimation.value!;
+    final currentSize =
+        widget.dotSize + (widget.expandedSize - widget.dotSize) * _animationValue;
+    final currentColor =
+        Color.lerp(widget.dotColor, widget.activeDotColor, _animationValue)!;
 
-        return GestureDetector(
-          onTap: widget.onTap,
-          child: Container(
-            height: widget.isHorizontal ? widget.dotSize : currentSize,
-            width: widget.isHorizontal ? currentSize : widget.dotSize,
-            decoration: BoxDecoration(
-              color: currentColor,
-              borderRadius: BorderRadius.circular(currentSize / 2),
-            ),
-          ),
-        );
-      },
+    return GestureDetector(
+      onTap: widget.onTap,
+      child: AnimatedContainer(
+        duration: widget.animationDuration,
+        curve: Curves.easeOutCubic,
+        height: widget.isHorizontal ? widget.dotSize : currentSize,
+        width: widget.isHorizontal ? currentSize : widget.dotSize,
+        decoration: BoxDecoration(
+          color: currentColor,
+          borderRadius: BorderRadius.circular(currentSize / 2),
+        ),
+      ),
     );
   }
 }
