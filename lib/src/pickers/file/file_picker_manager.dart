@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/material.dart';
 
 import '../../widgets/toast.dart';
 
@@ -19,20 +18,51 @@ const List<String> supportedAudioTypes = [
 ];
 
 /// أنواع الملفات المرئية المدعومة
-const List<String> supportedVideoTypes = [
-  'mp4',
-  'mkv',
-  'avi',
-  'mov',
-  'wmv',
-];
+const List<String> supportedVideoTypes = ['mp4', 'mkv', 'avi', 'mov', 'wmv'];
 
 /// مدير اختيار الملفات
 class FilePickerManager {
   const FilePickerManager._();
 
+  /// اختيار ملف
+  static Future<File?> pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        return File(result.files.single.path!);
+      }
+      return null;
+    } catch (e) {
+      showToast('حدث خطأ أثناء اختيار الملف: $e');
+      return null;
+    }
+  }
+
+  // pick svg file
+  static Future<File?> pickSvg() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['svg'],
+        allowMultiple: false,
+      );
+
+      if (result != null && result.files.single.path != null) {
+        return File(result.files.single.path!);
+      }
+      return null;
+    } catch (e) {
+      showToast('حدث خطاء اثناء اختيار الملف: $e');
+      return null;
+    }
+  }
+
   /// اختيار ملف صوتي
-  static Future<File?> pickAudio(BuildContext context) async {
+  static Future<File?> pickAudio() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -58,7 +88,7 @@ class FilePickerManager {
   }
 
   /// اختيار ملف فيديو
-  static Future<File?> pickVideo(BuildContext context) async {
+  static Future<File?> pickVideo() async {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
