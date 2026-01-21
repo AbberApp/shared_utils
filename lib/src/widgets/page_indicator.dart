@@ -30,78 +30,159 @@ class PageIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isHorizontal = axis == Axis.horizontal;
-    final totalSize = _calculateTotalSize(isHorizontal);
+    final totalSize = (count - 1) * dotSize + (count - 1) * spacing + expandedSize;
 
     return SizedBox(
       width: isHorizontal ? totalSize : null,
       height: isHorizontal ? null : totalSize,
-      child: isHorizontal
-          ? Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _buildDots(isHorizontal),
-            )
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: _buildDots(isHorizontal),
+      child: Flex(
+        direction: axis,
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          for (int i = 0; i < count; i++) ...[
+            _Dot(
+              index: i,
+              controller: controller,
+              isHorizontal: isHorizontal,
+              dotSize: dotSize,
+              expandedSize: expandedSize,
+              dotColor: dotColor,
+              activeDotColor: activeDotColor,
+              animationDuration: animationDuration,
+              onTap: onDotClicked,
             ),
+            if (i < count - 1)
+              SizedBox(
+                width: isHorizontal ? spacing : 0,
+                height: isHorizontal ? 0 : spacing,
+              ),
+          ],
+        ],
+      ),
     );
   }
+}
 
-  double _calculateTotalSize(bool isHorizontal) {
-    final normalDotSize = dotSize;
-    final totalNormalDots = (count - 1) * normalDotSize;
-    final totalSpacing = (count - 1) * spacing;
-    return totalNormalDots + expandedSize + totalSpacing;
+class _Dot extends StatefulWidget {
+  const _Dot({
+    required this.index,
+    required this.controller,
+    required this.isHorizontal,
+    required this.dotSize,
+    required this.expandedSize,
+    required this.dotColor,
+    required this.activeDotColor,
+    required this.animationDuration,
+    this.onTap,
+  });
+
+  final int index;
+  final PageController controller;
+  final bool isHorizontal;
+  final double dotSize;
+  final double expandedSize;
+  final Color dotColor;
+  final Color activeDotColor;
+  final Duration animationDuration;
+  final VoidCallback? onTap;
+
+  @override
+  State<_Dot> createState() => _DotState();
+}
+
+class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _sizeAnimation;
+  late Animation<Color?> _colorAnimation;
+
+  double _previousPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+
+    _previousPage = widget.controller.initialPage.toDouble();
+    _setupAnimations(_calculateAnimationValue(_previousPage));
+
+    widget.controller.addListener(_onPageScroll);
   }
 
-  List<Widget> _buildDots(bool isHorizontal) {
-    final dots = <Widget>[];
+  void _setupAnimations(double initialValue) {
+    _sizeAnimation = Tween<double>(
+      begin: widget.dotSize,
+      end: widget.expandedSize,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
 
-    for (int i = 0; i < count; i++) {
-      dots.add(
-        AnimatedBuilder(
-          animation: controller,
-          builder: (context, _) => _buildDot(i, isHorizontal),
-        ),
-      );
+    _colorAnimation = ColorTween(
+      begin: widget.dotColor,
+      end: widget.activeDotColor,
+    ).animate(CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOutCubic,
+    ));
 
-      if (i < count - 1) {
-        dots.add(SizedBox(
-          width: isHorizontal ? spacing : 0,
-          height: isHorizontal ? 0 : spacing,
-        ));
-      }
-    }
-
-    return dots;
+    _animationController.value = initialValue;
   }
 
-  Widget _buildDot(int index, bool isHorizontal) {
-    double currentPage = 0;
+  double _calculateAnimationValue(double currentPage) {
+    final distance = (currentPage - widget.index).abs();
+    return (1 - distance).clamp(0.0, 1.0);
+  }
 
-    if (controller.hasClients) {
-      currentPage = controller.page ?? 0;
+  void _onPageScroll() {
+    if (!widget.controller.hasClients) return;
+
+    final currentPage = widget.controller.page ?? _previousPage;
+    final newValue = _calculateAnimationValue(currentPage);
+
+    _animationController.value = newValue;
+    _previousPage = currentPage;
+  }
+
+  @override
+  void didUpdateWidget(_Dot oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onPageScroll);
+      widget.controller.addListener(_onPageScroll);
     }
+  }
 
-    final distance = (currentPage - index).abs();
-    final animationValue = (1 - distance).clamp(0.0, 1.0);
-    final currentDotSize = dotSize + (expandedSize - dotSize) * animationValue;
-    final interpolatedColor = Color.lerp(dotColor, activeDotColor, animationValue)!;
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onPageScroll);
+    _animationController.dispose();
+    super.dispose();
+  }
 
-    return GestureDetector(
-      onTap: onDotClicked,
-      child: AnimatedContainer(
-        duration: animationDuration,
-        curve: Curves.easeInOut,
-        height: isHorizontal ? dotSize : currentDotSize,
-        width: isHorizontal ? currentDotSize : dotSize,
-        decoration: BoxDecoration(
-          color: interpolatedColor,
-          borderRadius: BorderRadius.circular(currentDotSize / 2),
-        ),
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, _) {
+        final currentSize = _sizeAnimation.value;
+        final currentColor = _colorAnimation.value!;
+
+        return GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            height: widget.isHorizontal ? widget.dotSize : currentSize,
+            width: widget.isHorizontal ? currentSize : widget.dotSize,
+            decoration: BoxDecoration(
+              color: currentColor,
+              borderRadius: BorderRadius.circular(currentSize / 2),
+            ),
+          ),
+        );
+      },
     );
   }
 }
