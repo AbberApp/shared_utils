@@ -98,19 +98,33 @@ class _Dot extends StatefulWidget {
   State<_Dot> createState() => _DotState();
 }
 
-class _DotState extends State<_Dot> {
-  double _animationValue = 0;
+class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
   double _currentPage = 0;
+  double _targetValue = 0;
 
   @override
   void initState() {
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _animation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeInOut,
+    );
+
     _currentPage = widget.controller.initialPage.toDouble();
-    _animationValue = _calculateAnimationValue(_currentPage);
+    _targetValue = _calculateTargetValue(_currentPage);
+    _controller.value = _targetValue;
+
     widget.controller.addListener(_onPageScroll);
   }
 
-  double _calculateAnimationValue(double currentPage) {
+  double _calculateTargetValue(double currentPage) {
     final distance = (currentPage - widget.index).abs();
     return (1 - distance).clamp(0.0, 1.0);
   }
@@ -119,13 +133,15 @@ class _DotState extends State<_Dot> {
     if (!widget.controller.hasClients) return;
 
     final currentPage = widget.controller.page ?? _currentPage;
-    final newValue = _calculateAnimationValue(currentPage);
+    final newTarget = _calculateTargetValue(currentPage);
 
-    if (_animationValue != newValue || _currentPage != currentPage) {
-      setState(() {
-        _animationValue = newValue;
-        _currentPage = currentPage;
-      });
+    if (_currentPage != currentPage) {
+      _currentPage = currentPage;
+    }
+
+    if ((_targetValue - newTarget).abs() > 0.01) {
+      _targetValue = newTarget;
+      _controller.animateTo(_targetValue);
     }
   }
 
@@ -141,37 +157,42 @@ class _DotState extends State<_Dot> {
   @override
   void dispose() {
     widget.controller.removeListener(_onPageScroll);
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentSize =
-        widget.dotSize + (widget.expandedSize - widget.dotSize) * _animationValue;
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, _) {
+        final animationValue = _animation.value;
+        final currentSize = widget.dotSize +
+            (widget.expandedSize - widget.dotSize) * animationValue;
 
-    // تحديد اللون بناءً على الموقع
-    final Color currentColor;
-    if (widget.fillPreviousDots && widget.index < _currentPage.floor()) {
-      // النقاط السابقة تأخذ activeDotColor
-      currentColor = widget.activeDotColor;
-    } else {
-      // النقطة الحالية والقادمة تتدرج بشكل طبيعي
-      currentColor =
-          Color.lerp(widget.dotColor, widget.activeDotColor, _animationValue)!;
-    }
+        // تحديد اللون بناءً على الموقع
+        final Color currentColor;
+        if (widget.fillPreviousDots && widget.index < _currentPage.floor()) {
+          // النقاط السابقة تأخذ activeDotColor
+          currentColor = widget.activeDotColor;
+        } else {
+          // النقطة الحالية والقادمة تتدرج بشكل طبيعي
+          currentColor = Color.lerp(
+              widget.dotColor, widget.activeDotColor, animationValue)!;
+        }
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: widget.animationDuration,
-        curve: Curves.easeOutCubic,
-        height: widget.isHorizontal ? widget.dotSize : currentSize,
-        width: widget.isHorizontal ? currentSize : widget.dotSize,
-        decoration: BoxDecoration(
-          color: currentColor,
-          borderRadius: BorderRadius.circular(currentSize / 2),
-        ),
-      ),
+        return GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            height: widget.isHorizontal ? widget.dotSize : currentSize,
+            width: widget.isHorizontal ? currentSize : widget.dotSize,
+            decoration: BoxDecoration(
+              color: currentColor,
+              borderRadius: BorderRadius.circular(currentSize / 2),
+            ),
+          ),
+        );
+      },
     );
   }
 }
