@@ -14,6 +14,7 @@ class PageIndicator extends StatelessWidget {
     this.dotSize = 8.0,
     this.expandedSize = 32.0,
     this.animationDuration = Duration.zero,
+    this.fillPreviousDots = false,
   });
 
   final PageController controller;
@@ -26,6 +27,9 @@ class PageIndicator extends StatelessWidget {
   final double expandedSize;
   final Color dotColor;
   final Color activeDotColor;
+
+  /// عند التفعيل، النقاط السابقة للصفحة الحالية تأخذ لون [activeDotColor] مع حجم [dotSize]
+  final bool fillPreviousDots;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +54,7 @@ class PageIndicator extends StatelessWidget {
               dotColor: dotColor,
               activeDotColor: activeDotColor,
               animationDuration: animationDuration,
+              fillPreviousDots: fillPreviousDots,
               onTap: onDotClicked,
             ),
             if (i < count - 1)
@@ -74,6 +79,7 @@ class _Dot extends StatefulWidget {
     required this.dotColor,
     required this.activeDotColor,
     required this.animationDuration,
+    required this.fillPreviousDots,
     this.onTap,
   });
 
@@ -85,6 +91,7 @@ class _Dot extends StatefulWidget {
   final Color dotColor;
   final Color activeDotColor;
   final Duration animationDuration;
+  final bool fillPreviousDots;
   final VoidCallback? onTap;
 
   @override
@@ -93,13 +100,13 @@ class _Dot extends StatefulWidget {
 
 class _DotState extends State<_Dot> {
   double _animationValue = 0;
+  double _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    _animationValue = _calculateAnimationValue(
-      widget.controller.initialPage.toDouble(),
-    );
+    _currentPage = widget.controller.initialPage.toDouble();
+    _animationValue = _calculateAnimationValue(_currentPage);
     widget.controller.addListener(_onPageScroll);
   }
 
@@ -111,11 +118,14 @@ class _DotState extends State<_Dot> {
   void _onPageScroll() {
     if (!widget.controller.hasClients) return;
 
-    final currentPage = widget.controller.page ?? 0;
+    final currentPage = widget.controller.page ?? _currentPage;
     final newValue = _calculateAnimationValue(currentPage);
 
-    if (_animationValue != newValue) {
-      setState(() => _animationValue = newValue);
+    if (_animationValue != newValue || _currentPage != currentPage) {
+      setState(() {
+        _animationValue = newValue;
+        _currentPage = currentPage;
+      });
     }
   }
 
@@ -138,8 +148,17 @@ class _DotState extends State<_Dot> {
   Widget build(BuildContext context) {
     final currentSize =
         widget.dotSize + (widget.expandedSize - widget.dotSize) * _animationValue;
-    final currentColor =
-        Color.lerp(widget.dotColor, widget.activeDotColor, _animationValue)!;
+
+    // تحديد اللون بناءً على الموقع
+    final Color currentColor;
+    if (widget.fillPreviousDots && widget.index < _currentPage.floor()) {
+      // النقاط السابقة تأخذ activeDotColor
+      currentColor = widget.activeDotColor;
+    } else {
+      // النقطة الحالية والقادمة تتدرج بشكل طبيعي
+      currentColor =
+          Color.lerp(widget.dotColor, widget.activeDotColor, _animationValue)!;
+    }
 
     return GestureDetector(
       onTap: widget.onTap,
