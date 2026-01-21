@@ -17,7 +17,6 @@ class ImagePickerManager {
   /// اختيار صورة واحدة
   static Future<File?> pickImage(
     ImagePickerSource source, {
-    required BuildContext context,
     int imageQuality = 85,
     bool useCrop = false,
   }) async {
@@ -47,7 +46,6 @@ class ImagePickerManager {
 
   /// اختيار صور متعددة
   static Future<List<XFile>?> pickMultipleImages({
-    required BuildContext context,
     int imageQuality = 85,
   }) async {
     try {
