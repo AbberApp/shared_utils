@@ -10,21 +10,37 @@ class Failure {
 
   factory Failure.fromJson(int code, Map<String, dynamic> json) {
     String? error;
-    if (json['message'] != null && json['message'].isNotEmpty) {
-      error = json['message'] as String;
-    }
-    if (json['error'] != null && json['error'].isNotEmpty) {
-      error = json['error'] as String;
-    }
-    if (json['details'] != null && json['details'].isNotEmpty) {
-      error = json['details'] as String;
-    }
-    if (json['detail'] != null && json['detail'].isNotEmpty) {
-      error = json['detail'] as String;
-    }
-    if (json['errors'] != null && json['errors'].isNotEmpty) {
-      error = json['errors'] as String;
-    }
+    try {
+      if (json['message'] != null &&
+          json['message'].isNotEmpty &&
+          json['message'] is String) {
+        error = json['message'] as String;
+      }
+      if (json['error'] != null &&
+          json['error'].isNotEmpty &&
+          json['error'] is String &&
+          error == null) {
+        error = json['error'] as String;
+      }
+      if (json['details'] != null &&
+          json['details'].isNotEmpty &&
+          json['details'] is String &&
+          error == null) {
+        error = json['details'] as String;
+      }
+      if (json['detail'] != null &&
+          json['detail'].isNotEmpty &&
+          json['detail'] is String &&
+          error == null) {
+        error = json['detail'] as String;
+      }
+      if (json['errors'] != null &&
+          json['errors'].isNotEmpty &&
+          json['errors'] is String &&
+          error == null) {
+        error = json['errors'] as String;
+      }
+    } catch (_) {}
 
     return Failure(
       code: code,
