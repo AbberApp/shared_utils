@@ -130,6 +130,54 @@ extension DateFormatExtension on DateTime {
     return months > 0 ? '$years س و $months ش' : '$years س';
   }
 
+  /// تنسيق "منذ..." بالعربية الكاملة
+  String get toTimeAgoArabic {
+    final now = DateTime.now();
+    final diff = now.difference(this);
+
+    if (diff.inSeconds < 60) {
+      return 'الآن';
+    }
+
+    if (diff.inMinutes < 60) {
+      final minutes = diff.inMinutes;
+      if (minutes == 1) return 'منذ دقيقة';
+      if (minutes == 2) return 'منذ دقيقتين';
+      if (minutes <= 10) return 'منذ $minutes دقائق';
+      return 'منذ $minutes دقيقة';
+    }
+
+    if (diff.inHours < 24) {
+      final hours = diff.inHours;
+      if (hours == 1) return 'منذ ساعة';
+      if (hours == 2) return 'منذ ساعتين';
+      if (hours <= 10) return 'منذ $hours ساعات';
+      return 'منذ $hours ساعة';
+    }
+
+    if (diff.inDays < 30) {
+      final days = diff.inDays;
+      if (days == 1) return 'منذ يوم';
+      if (days == 2) return 'منذ يومين';
+      if (days <= 10) return 'منذ $days أيام';
+      return 'منذ $days يوم';
+    }
+
+    if (diff.inDays < 365) {
+      final months = diff.inDays ~/ 30;
+      if (months == 1) return 'منذ شهر';
+      if (months == 2) return 'منذ شهرين';
+      if (months <= 10) return 'منذ $months أشهر';
+      return 'منذ $months شهر';
+    }
+
+    final years = diff.inDays ~/ 365;
+    if (years == 1) return 'منذ سنة';
+    if (years == 2) return 'منذ سنتين';
+    if (years <= 10) return 'منذ $years سنوات';
+    return 'منذ $years سنة';
+  }
+
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 }
