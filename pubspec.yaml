@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.2.2-2
+version: 2.2.2-3
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -18,7 +18,7 @@ dependencies:
   connectivity_plus: ^7.0.0
 
   # File & Image Pickers
-  file_picker: ^10.3.7
+  file_picker: ^10.3.10
   image_picker: ^1.2.1
   image_cropper: ^11.0.0
 
