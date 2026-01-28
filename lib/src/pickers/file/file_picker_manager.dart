@@ -27,7 +27,7 @@ class FilePickerManager {
   /// اختيار ملف
   static Future<File?> pickFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.any,
         allowMultiple: false,
       );
@@ -45,7 +45,7 @@ class FilePickerManager {
   // pick svg file
   static Future<File?> pickSvg() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['svg'],
         allowMultiple: false,
@@ -64,7 +64,7 @@ class FilePickerManager {
   /// اختيار ملف صوتي
   static Future<File?> pickAudio() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: supportedAudioTypes,
         allowMultiple: false,
@@ -90,7 +90,7 @@ class FilePickerManager {
   /// اختيار ملف فيديو
   static Future<File?> pickVideo() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
+      final result = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: supportedVideoTypes,
         allowMultiple: false,

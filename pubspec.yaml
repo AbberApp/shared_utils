@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.2.1-5
+version: 2.2.2
 
 homepage: https://github.com/AbberApp/shared_utils
 
