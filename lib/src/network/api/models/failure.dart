@@ -6,7 +6,7 @@ class Failure {
 
   const Failure({required this.code, this.message, this.fields = const []});
 
-  String get displayMessage => message ?? 'حدث خطأ';
+  String get displayMessage => message ?? 'حدث خطأ غير متوقع';
 
   factory Failure.fromJson(int code, Map<String, dynamic> json) {
     String? error;
