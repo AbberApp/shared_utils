@@ -42,13 +42,16 @@ class Failure {
       }
     } catch (_) {}
 
-    return Failure(
-      code: code,
-      message: error,
-      fields: json['fields'] != null
-          ? (json['fields'] as List).map((e) => FieldError.fromJson(e)).toList()
-          : [],
-    );
+    List<FieldError> fields = [];
+    try {
+      if (json['fields'] != null) {
+        fields = (json['fields'] as List)
+            .map((e) => FieldError.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    } catch (_) {}
+
+    return Failure(code: code, message: error, fields: fields);
   }
 
   @override
