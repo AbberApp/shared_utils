@@ -26,7 +26,7 @@ class AppUpdateChecker {
   Future<void> checkForUpdate({
     required String playStoreUrl,
     required String appStoreId,
-    required void Function(String storeUrl) onUpdateAvailable,
+    required void Function() onUpdateAvailable,
     void Function(Object error)? onError,
   }) async {
     try {
@@ -48,14 +48,14 @@ class AppUpdateChecker {
 
   Future<void> _checkAndroidUpdate(
     String storeUrl,
-    void Function(String storeUrl) onUpdateAvailable,
+    void Function() onUpdateAvailable,
   ) async {
     final updateInfo = await InAppUpdate.checkForUpdate();
 
     if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
       log('Update available - Android', name: 'AppUpdateChecker');
       updateRequired = true;
-      onUpdateAvailable(storeUrl);
+      onUpdateAvailable();
     }
   }
 
@@ -64,7 +64,7 @@ class AppUpdateChecker {
   Future<void> checkIOSUpdate(
     String storeUrl,
     String appStoreId,
-    void Function(String storeUrl) onUpdateAvailable,
+    void Function() onUpdateAvailable,
     void Function(Object error)? onError,
   ) async {
     try {
@@ -116,7 +116,7 @@ class AppUpdateChecker {
 
       if (updateAvailable) {
         updateRequired = true;
-        onUpdateAvailable(storeUrl);
+        onUpdateAvailable();
       }
     } catch (e) {
       onError?.call(e);
