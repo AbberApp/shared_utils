@@ -30,13 +30,9 @@ class AppUpdateChecker {
   }) async {
     try {
       if (Platform.isAndroid) {
-        await _checkAndroidUpdate( onUpdateAvailable);
+        await _checkAndroidUpdate(onUpdateAvailable);
       } else if (Platform.isIOS) {
-        await checkIOSUpdate(
-          appStoreId,
-          onUpdateAvailable,
-          onError,
-        );
+        await checkIOSUpdate(appStoreId, onUpdateAvailable, onError);
       }
     } catch (e) {
       log('Error checking for update: $e', name: 'AppUpdateChecker', error: e);
@@ -44,9 +40,7 @@ class AppUpdateChecker {
     }
   }
 
-  Future<void> _checkAndroidUpdate(
-    void Function() onUpdateAvailable,
-  ) async {
+  Future<void> _checkAndroidUpdate(void Function() onUpdateAvailable) async {
     final updateInfo = await InAppUpdate.checkForUpdate();
 
     if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
@@ -68,16 +62,17 @@ class AppUpdateChecker {
       final String localVersion;
 
       final packageInfo = await PackageInfo.fromPlatform();
-      localVersion = packageInfo.version;
 
       final response = await _dio.get(
         'https://itunes.apple.com/lookup',
         queryParameters: {'id': appStoreId, 'version': '2'},
       );
-      
 
       if (response.statusCode != 200) {
-        log('Failed to fetch app info from App Store', name: 'AppUpdateChecker');
+        log(
+          'Failed to fetch app info from App Store',
+          name: 'AppUpdateChecker',
+        );
         throw Exception(
           'Failed to fetch app info from App Store: ${response.statusCode}',
         );
@@ -96,18 +91,56 @@ class AppUpdateChecker {
         return;
       }
 
-      final appData = results.first as Map<String, dynamic>;
-      final storeVersion = appData['version'] as String?;
+      // استخراج versions و build numbers منفصلة
+      final storeVersions = <String>[];
+      final storeBuildNumbers = <String>[];
 
-      log('Local version: $localVersion', name: 'AppUpdateChecker');
-      log('Store version: $storeVersion', name: 'AppUpdateChecker');
+      for (final result in results) {
+        if (result is Map<String, dynamic>) {
+          // استخراج version (مثل "9.9.6")
+          final version = result['version'] as String?;
+          if (version != null && version.isNotEmpty) {
+            storeVersions.add(version);
+          }
 
-      if (storeVersion == null) {
-        log('Store version not found', name: 'AppUpdateChecker');
+          // استخراج bundleVersion (build number مثل "314")
+          final bundleVersion = result['bundleVersion'] as String?;
+          if (bundleVersion != null && bundleVersion.isNotEmpty) {
+            storeBuildNumbers.add(bundleVersion);
+          }
+        }
+      }
+
+      log('Found store versions: $storeVersions', name: 'AppUpdateChecker');
+      log('Found store build numbers: $storeBuildNumbers', name: 'AppUpdateChecker');
+
+      if (storeVersions.isEmpty) {
+        log('No valid versions found in App Store', name: 'AppUpdateChecker');
         return;
       }
 
-      final updateAvailable = _isUpdateAvailable(localVersion, storeVersion);
+      // إيجاد أكبر version و build number
+      final storeVersion = _findLatestVersion(storeVersions);
+      final storeBuildNumber = storeBuildNumbers.isNotEmpty
+          ? _findLatestBuildNumber(storeBuildNumbers)
+          : null;
+
+      localVersion = packageInfo.version;
+      final localBuildNumber = packageInfo.buildNumber;
+
+      log('Local version: $localVersion', name: 'AppUpdateChecker');
+      log('Local build number: $localBuildNumber', name: 'AppUpdateChecker');
+      log('Store version (latest): $storeVersion', name: 'AppUpdateChecker');
+      log('Store build number (latest): $storeBuildNumber', name: 'AppUpdateChecker');
+
+      final updateAvailable = _isUpdateAvailable(
+        localVersion: localVersion,
+        storeVersion: storeVersion,
+        localBuildNumber: localBuildNumber,
+        storeBuildNumber: storeBuildNumber,
+      );
+
+      log('Update available: $updateAvailable', name: 'AppUpdateChecker');
 
       if (updateAvailable) {
         updateRequired = true;
@@ -118,16 +151,63 @@ class AppUpdateChecker {
     }
   }
 
-  /// مقارنة الإصدارات
-  bool _isUpdateAvailable(String localVersion, String storeVersion) {
-    final localParts = localVersion.split('+').first.split('.');
-    final storeParts = storeVersion.split('+').first.split('.');
+  /// مقارنة الإصدارات (build number أولاً، ثم version كـ fallback)
+  bool _isUpdateAvailable({
+    required String localVersion,
+    required String storeVersion,
+    String? localBuildNumber,
+    String? storeBuildNumber,
+  }) {
+    try {
+      localVersion = localVersion.trim();
+      storeVersion = storeVersion.trim();
 
-    final maxLength = localParts.length > storeParts.length
-        ? localParts.length
-        : storeParts.length;
+      // إذا كان build numbers متاحة، نقارنها أولاً
+      if (localBuildNumber != null &&
+          localBuildNumber.isNotEmpty &&
+          storeBuildNumber != null &&
+          storeBuildNumber.isNotEmpty) {
+        final localBuild = int.tryParse(localBuildNumber) ?? 0;
+        final storeBuild = int.tryParse(storeBuildNumber) ?? 0;
 
-    for (int i = 0; i < maxLength; i++) {
+        log(
+          'Comparing build numbers: local=$localBuild, store=$storeBuild',
+          name: 'AppUpdateChecker',
+        );
+
+        if (storeBuild != localBuild) {
+          return storeBuild > localBuild;
+        }
+
+        // إذا كانت build numbers متساوية، نقارن versions
+        log(
+          'Build numbers are equal, comparing versions',
+          name: 'AppUpdateChecker',
+        );
+      }
+
+      // مقارنة versions (major.minor.patch)
+      log(
+        'Comparing versions: local=$localVersion, store=$storeVersion',
+        name: 'AppUpdateChecker',
+      );
+
+      if (localVersion == storeVersion) return false;
+
+      return _compareVersions(localVersion, storeVersion);
+    } catch (e) {
+      log('Error comparing versions: $e', name: 'AppUpdateChecker', error: e);
+      return false;
+    }
+  }
+
+  /// مقارنة أرقام الإصدار (major.minor.patch)
+  bool _compareVersions(String local, String store) {
+    final localParts = local.split('.');
+    final storeParts = store.split('.');
+
+    // مقارنة حتى 3 أجزاء (major, minor, patch)
+    for (int i = 0; i < 3; i++) {
       final localPart = i < localParts.length
           ? int.tryParse(localParts[i]) ?? 0
           : 0;
@@ -140,6 +220,43 @@ class AppUpdateChecker {
     }
 
     return false;
+  }
+
+  /// إيجاد أكبر إصدار من قائمة الإصدارات
+  String _findLatestVersion(List<String> versions) {
+    if (versions.isEmpty) return '0.0.0';
+    if (versions.length == 1) return versions.first;
+
+    String latest = versions.first;
+
+    for (int i = 1; i < versions.length; i++) {
+      final current = versions[i];
+
+      if (_compareVersions(latest, current)) {
+        latest = current;
+      }
+    }
+
+    return latest;
+  }
+
+  /// إيجاد أكبر build number من قائمة
+  String _findLatestBuildNumber(List<String> buildNumbers) {
+    if (buildNumbers.isEmpty) return '0';
+    if (buildNumbers.length == 1) return buildNumbers.first;
+
+    int maxBuild = 0;
+    String latest = buildNumbers.first;
+
+    for (final buildNumber in buildNumbers) {
+      final build = int.tryParse(buildNumber) ?? 0;
+      if (build > maxBuild) {
+        maxBuild = build;
+        latest = buildNumber;
+      }
+    }
+
+    return latest;
   }
 
   /// تنفيذ التحديث الفوري (Android فقط)
