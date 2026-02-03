@@ -68,6 +68,7 @@ class AppUpdateChecker {
     void Function(Object error)? onError,
   ) async {
     try {
+      log('Checking for update - iOS', name: 'AppUpdateChecker');
       final String localVersion;
 
       final packageInfo = await PackageInfo.fromPlatform();
@@ -78,7 +79,10 @@ class AppUpdateChecker {
         queryParameters: {'id': appStoreId, 'version': '2'},
       );
 
+      log('Fetched app info from App Store {${response.data}- ${response.statusCode}}', name: 'AppUpdateChecker');
+
       if (response.statusCode != 200) {
+        log('Failed to fetch app info from App Store', name: 'AppUpdateChecker');
         throw Exception(
           'Failed to fetch app info from App Store: ${response.statusCode}',
         );
