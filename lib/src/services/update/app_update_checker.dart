@@ -24,17 +24,15 @@ class AppUpdateChecker {
 
   /// التحقق من توفر تحديث
   Future<void> checkForUpdate({
-    required String playStoreUrl,
     required String appStoreId,
     required void Function() onUpdateAvailable,
     void Function(Object error)? onError,
   }) async {
     try {
       if (Platform.isAndroid) {
-        await _checkAndroidUpdate(playStoreUrl, onUpdateAvailable);
+        await _checkAndroidUpdate( onUpdateAvailable);
       } else if (Platform.isIOS) {
         await checkIOSUpdate(
-          playStoreUrl,
           appStoreId,
           onUpdateAvailable,
           onError,
@@ -47,7 +45,6 @@ class AppUpdateChecker {
   }
 
   Future<void> _checkAndroidUpdate(
-    String storeUrl,
     void Function() onUpdateAvailable,
   ) async {
     final updateInfo = await InAppUpdate.checkForUpdate();
@@ -62,7 +59,6 @@ class AppUpdateChecker {
   /// فحص تحديث iOS مباشرة من iTunes API
   /// [testLocalVersion] للاختبار فقط - لتجاوز الإصدار المحلي
   Future<void> checkIOSUpdate(
-    String storeUrl,
     String appStoreId,
     void Function() onUpdateAvailable,
     void Function(Object error)? onError,
