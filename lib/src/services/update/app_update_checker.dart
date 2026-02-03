@@ -59,13 +59,26 @@ class AppUpdateChecker {
   ) async {
     try {
       log('Checking for update - iOS', name: 'AppUpdateChecker');
+      log('App Store ID: $appStoreId', name: 'AppUpdateChecker');
       final String localVersion;
 
       final packageInfo = await PackageInfo.fromPlatform();
 
+      // إضافة timestamp لمنع cache
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
       final response = await _dio.get(
         'https://itunes.apple.com/lookup',
-        queryParameters: {'id': appStoreId, 'version': '2'},
+        queryParameters: {
+          'id': appStoreId,
+          't': timestamp, // لمنع cache
+        },
+        options: Options(
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        ),
       );
 
       if (response.statusCode != 200) {
@@ -91,53 +104,41 @@ class AppUpdateChecker {
         return;
       }
 
-      // استخراج versions و build numbers منفصلة
+      // استخراج جميع الإصدارات من النتائج
       final storeVersions = <String>[];
-      final storeBuildNumbers = <String>[];
+
+      log('Number of results: ${results.length}', name: 'AppUpdateChecker');
 
       for (final result in results) {
         if (result is Map<String, dynamic>) {
           // استخراج version (مثل "9.9.6")
           final version = result['version'] as String?;
+          log('Extracted version from result: $version', name: 'AppUpdateChecker');
           if (version != null && version.isNotEmpty) {
             storeVersions.add(version);
-          }
-
-          // استخراج bundleVersion (build number مثل "314")
-          final bundleVersion = result['bundleVersion'] as String?;
-          if (bundleVersion != null && bundleVersion.isNotEmpty) {
-            storeBuildNumbers.add(bundleVersion);
           }
         }
       }
 
       log('Found store versions: $storeVersions', name: 'AppUpdateChecker');
-      log('Found store build numbers: $storeBuildNumbers', name: 'AppUpdateChecker');
 
       if (storeVersions.isEmpty) {
         log('No valid versions found in App Store', name: 'AppUpdateChecker');
         return;
       }
 
-      // إيجاد أكبر version و build number
+      // إيجاد أكبر إصدار
       final storeVersion = _findLatestVersion(storeVersions);
-      final storeBuildNumber = storeBuildNumbers.isNotEmpty
-          ? _findLatestBuildNumber(storeBuildNumbers)
-          : null;
 
       localVersion = packageInfo.version;
-      final localBuildNumber = packageInfo.buildNumber;
 
       log('Local version: $localVersion', name: 'AppUpdateChecker');
-      log('Local build number: $localBuildNumber', name: 'AppUpdateChecker');
+      log('Local build number: ${packageInfo.buildNumber}', name: 'AppUpdateChecker');
       log('Store version (latest): $storeVersion', name: 'AppUpdateChecker');
-      log('Store build number (latest): $storeBuildNumber', name: 'AppUpdateChecker');
 
       final updateAvailable = _isUpdateAvailable(
         localVersion: localVersion,
         storeVersion: storeVersion,
-        localBuildNumber: localBuildNumber,
-        storeBuildNumber: storeBuildNumber,
       );
 
       log('Update available: $updateAvailable', name: 'AppUpdateChecker');
@@ -151,42 +152,15 @@ class AppUpdateChecker {
     }
   }
 
-  /// مقارنة الإصدارات (build number أولاً، ثم version كـ fallback)
+  /// مقارنة الإصدارات (major.minor.patch)
   bool _isUpdateAvailable({
     required String localVersion,
     required String storeVersion,
-    String? localBuildNumber,
-    String? storeBuildNumber,
   }) {
     try {
       localVersion = localVersion.trim();
       storeVersion = storeVersion.trim();
 
-      // إذا كان build numbers متاحة، نقارنها أولاً
-      if (localBuildNumber != null &&
-          localBuildNumber.isNotEmpty &&
-          storeBuildNumber != null &&
-          storeBuildNumber.isNotEmpty) {
-        final localBuild = int.tryParse(localBuildNumber) ?? 0;
-        final storeBuild = int.tryParse(storeBuildNumber) ?? 0;
-
-        log(
-          'Comparing build numbers: local=$localBuild, store=$storeBuild',
-          name: 'AppUpdateChecker',
-        );
-
-        if (storeBuild != localBuild) {
-          return storeBuild > localBuild;
-        }
-
-        // إذا كانت build numbers متساوية، نقارن versions
-        log(
-          'Build numbers are equal, comparing versions',
-          name: 'AppUpdateChecker',
-        );
-      }
-
-      // مقارنة versions (major.minor.patch)
       log(
         'Comparing versions: local=$localVersion, store=$storeVersion',
         name: 'AppUpdateChecker',
@@ -234,25 +208,6 @@ class AppUpdateChecker {
 
       if (_compareVersions(latest, current)) {
         latest = current;
-      }
-    }
-
-    return latest;
-  }
-
-  /// إيجاد أكبر build number من قائمة
-  String _findLatestBuildNumber(List<String> buildNumbers) {
-    if (buildNumbers.isEmpty) return '0';
-    if (buildNumbers.length == 1) return buildNumbers.first;
-
-    int maxBuild = 0;
-    String latest = buildNumbers.first;
-
-    for (final buildNumber in buildNumbers) {
-      final build = int.tryParse(buildNumber) ?? 0;
-      if (build > maxBuild) {
-        maxBuild = build;
-        latest = buildNumber;
       }
     }
 
