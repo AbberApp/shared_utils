@@ -79,7 +79,7 @@ class AppUpdateChecker {
         queryParameters: {'id': appStoreId, 'version': '2'},
       );
 
-      print('AppUpdateChecker Fetched app info from App Store {${response.data.toString()}- ${response.statusCode}}',);
+      print('AppUpdateChecker Fetched app info from App Store ${response.statusCode} - ${response.data.toString()}',);
 
       if (response.statusCode != 200) {
         log('Failed to fetch app info from App Store', name: 'AppUpdateChecker');
