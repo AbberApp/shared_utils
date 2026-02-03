@@ -74,10 +74,6 @@ class AppUpdateChecker {
         'https://itunes.apple.com/lookup',
         queryParameters: {'id': appStoreId, 'version': '2'},
       );
-
-      print('AppUpdateChecker Fetched app info from App Store ${response.statusCode}');
-      print('AppUpdateChecker data ${response.data.toString()}',);
-      print('AppUpdateChecker ${response.toString()}',);
       
 
       if (response.statusCode != 200) {
@@ -102,6 +98,9 @@ class AppUpdateChecker {
 
       final appData = results.first as Map<String, dynamic>;
       final storeVersion = appData['version'] as String?;
+
+      log('Local version: $localVersion', name: 'AppUpdateChecker');
+      log('Store version: $storeVersion', name: 'AppUpdateChecker');
 
       if (storeVersion == null) {
         log('Store version not found', name: 'AppUpdateChecker');
