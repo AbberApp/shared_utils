@@ -60,6 +60,7 @@ export 'src/device_info/models/device_info_model.dart';
 // Services - الخدمات
 // ═══════════════════════════════════════════════════════════════════════════
 
+export 'src/services/cache/file_cache_manager.dart';
 export 'src/services/update/app_update_checker.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -51,7 +51,6 @@ class AppUpdateChecker {
   }
 
   /// فحص تحديث iOS مباشرة من iTunes API
-  /// [testLocalVersion] للاختبار فقط - لتجاوز الإصدار المحلي
   Future<void> checkIOSUpdate(
     String appStoreId,
     void Function() onUpdateAvailable,
