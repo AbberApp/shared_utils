@@ -102,7 +102,7 @@ class LoadMoreIndicatorWidget extends StatelessWidget {
           ),
           padding: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(
-            color: backgroundColor ?? colorScheme.surfaceContainerHighest,
+            color: backgroundColor ?? colorScheme.secondary,
             borderRadius: BorderRadius.circular(100),
           ),
           child: CupertinoActivityIndicator(

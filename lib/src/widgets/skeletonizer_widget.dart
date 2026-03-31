@@ -36,8 +36,7 @@ class SkeletonizerWidget extends StatelessWidget {
           ? (containersColor ?? colorScheme.surface)
           : null,
       effect: ShimmerEffect(
-        baseColor:
-            shimmerBaseColor ?? colorScheme.onSurface.withValues(alpha: 0.08),
+        baseColor: shimmerBaseColor ?? colorScheme.surfaceTint,
         duration: const Duration(milliseconds: 900),
       ),
       child: child,
