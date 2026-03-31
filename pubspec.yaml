@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.2.4-19
+version: 2.2.5-20
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -24,6 +24,7 @@ dependencies:
 
   # UI
   fluttertoast: ^9.0.0
+  skeletonizer: ^2.1.0
 
   # Storage
   path_provider: ^2.1.5
