@@ -3,57 +3,6 @@ import 'package:flutter/material.dart';
 import 'load_more_widget.dart';
 import 'skeletonizer_widget.dart';
 
-class _PaginatedListContent<T> extends StatelessWidget {
-  const _PaginatedListContent({
-    required this.scrollController,
-    required this.items,
-    required this.isLoading,
-    required this.isLoadMore,
-    required this.itemBuilder,
-    this.padding,
-    this.shimmerBaseColor,
-    this.shimmerContainersColor,
-    this.loadMoreIndicatorColor,
-    this.loadMoreBackgroundColor,
-  });
-
-  final ScrollController scrollController;
-  final List<T> items;
-  final bool isLoading;
-  final bool isLoadMore;
-  final Widget Function(BuildContext context, T item) itemBuilder;
-  final EdgeInsets? padding;
-  final Color? shimmerBaseColor;
-  final Color? shimmerContainersColor;
-  final Color? loadMoreIndicatorColor;
-  final Color? loadMoreBackgroundColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return SkeletonizerWidget(
-      isLoading: isLoading,
-      shimmerBaseColor: shimmerBaseColor,
-      containersColor: shimmerContainersColor,
-      child: ListView.builder(
-        controller: scrollController,
-        padding: padding ??
-            const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
-        itemCount: items.length + 1,
-        itemBuilder: (context, index) {
-          if (index == items.length) {
-            return LoadMoreWidget(
-              isLoadMore: isLoadMore,
-              indicatorColor: loadMoreIndicatorColor,
-              indicatorBackgroundColor: loadMoreBackgroundColor,
-            );
-          }
-          return itemBuilder(context, items[index]);
-        },
-      ),
-    );
-  }
-}
-
 /// قائمة مُرقَّمة جاهزة تدير [ScrollController] داخلياً وتعرض:
 /// - [SkeletonizerWidget] أثناء التحميل الأولي
 /// - [RefreshIndicator] للسحب للتحديث إذا مُرِّر [onRefresh]
@@ -149,7 +98,8 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
     if (!_scrollController.hasClients) return;
     if (!widget.canLoadMore || widget.isLoadMore) return;
 
-    final remaining = _scrollController.position.maxScrollExtent -
+    final remaining =
+        _scrollController.position.maxScrollExtent -
         _scrollController.position.pixels;
 
     if (remaining <= 200.0) widget.onLoadMore();
@@ -186,6 +136,58 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
       shimmerContainersColor: widget.shimmerContainersColor,
       loadMoreIndicatorColor: widget.loadMoreIndicatorColor,
       loadMoreBackgroundColor: widget.loadMoreBackgroundColor,
+    );
+  }
+}
+
+class _PaginatedListContent<T> extends StatelessWidget {
+  const _PaginatedListContent({
+    required this.scrollController,
+    required this.items,
+    required this.isLoading,
+    required this.isLoadMore,
+    required this.itemBuilder,
+    this.padding,
+    this.shimmerBaseColor,
+    this.shimmerContainersColor,
+    this.loadMoreIndicatorColor,
+    this.loadMoreBackgroundColor,
+  });
+
+  final ScrollController scrollController;
+  final List<T> items;
+  final bool isLoading;
+  final bool isLoadMore;
+  final Widget Function(BuildContext context, T item) itemBuilder;
+  final EdgeInsets? padding;
+  final Color? shimmerBaseColor;
+  final Color? shimmerContainersColor;
+  final Color? loadMoreIndicatorColor;
+  final Color? loadMoreBackgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return SkeletonizerWidget(
+      isLoading: isLoading,
+      shimmerBaseColor: shimmerBaseColor,
+      containersColor: shimmerContainersColor,
+      child: ListView.builder(
+        controller: scrollController,
+        padding:
+            padding ??
+            const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
+        itemCount: items.length + 1,
+        itemBuilder: (context, index) {
+          if (index == items.length) {
+            return LoadMoreWidget(
+              isLoadMore: isLoadMore,
+              indicatorColor: loadMoreIndicatorColor,
+              indicatorBackgroundColor: loadMoreBackgroundColor,
+            );
+          }
+          return itemBuilder(context, items[index]);
+        },
+      ),
     );
   }
 }
