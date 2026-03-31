@@ -25,6 +25,12 @@ dependencies:
 - [IntlPhoneUtils](#intlphoneutils)
 - [Services](#services)
 - [Widgets](#widgets)
+  - [showToast](#showtoast)
+  - [SkeletonizerWidget](#skeletonizerwidget)
+  - [PaginatedListView](#paginatedlistview)
+  - [PageIndicator](#pageindicator)
+  - [ResponsiveGridView](#responsivegridview)
+  - [DelayHandler](#delayhandler--debounce)
 - [Utils](#utils)
 
 ---
@@ -396,6 +402,181 @@ await AppUpdateChecker.instance.performImmediateUpdate();
 ---
 
 ## Widgets
+
+> تُستورد من `package:shared_utils/widgets.dart` (ملف barrel منفصل لتجنب تعارض الأسماء).
+>
+> ```dart
+> import 'package:shared_utils/widgets.dart';
+> ```
+
+---
+
+### SkeletonizerWidget
+
+Widget يعرض تأثير shimmer أثناء التحميل، يلتف حول أي widget ويحوّله إلى skeleton.
+
+```dart
+SkeletonizerWidget(
+  isLoading: isLoading,
+  shimmerBaseColor: AppColors.of(context).muted,       // لون shimmer
+  containersColor: AppColors.of(context).background,    // لون خلفية الـ containers
+  child: YourWidget(),
+)
+```
+
+**مع `ignoreContainers`** — يُظهر الـ containers بلونها الأصلي بدلاً من shimmer:
+
+```dart
+SkeletonizerWidget(
+  isLoading: isLoading,
+  ignoreContainers: true,
+  shimmerBaseColor: AppColors.of(context).muted,
+  containersColor: AppColors.of(context).background,
+  child: YourWidget(),
+)
+```
+
+**مثال كامل مع BLoC:**
+
+```dart
+BlocBuilder<MyBloc, MyState>(
+  builder: (context, state) {
+    final bool isLoading = state is MyLoadingState;
+
+    final List<MyModel> items = isLoading
+        ? List.generate(6, (_) => MyModel.empty())
+        : bloc.items;
+
+    return SkeletonizerWidget(
+      isLoading: isLoading,
+      shimmerBaseColor: AppColors.of(context).muted,
+      containersColor: AppColors.of(context).background,
+      child: Column(
+        children: items.map((item) => MyItemWidget(item: item)).toList(),
+      ),
+    );
+  },
+)
+```
+
+**Parameters:**
+
+| Parameter | النوع | الافتراضي | الوصف |
+|-----------|-------|-----------|-------|
+| `isLoading` | `bool` | مطلوب | تفعيل/إيقاف تأثير الـ skeleton |
+| `child` | `Widget` | مطلوب | الـ widget المراد تحويله لـ skeleton |
+| `ignoreContainers` | `bool` | `false` | إظهار الـ containers بلونها بدلاً من shimmer |
+| `shimmerBaseColor` | `Color?` | `colorScheme.surfaceTint` | لون الـ shimmer |
+| `containersColor` | `Color?` | `colorScheme.surface` | لون خلفية الـ containers عند `ignoreContainers: true` |
+
+---
+
+### PaginatedListView
+
+قائمة جاهزة تدير الـ pagination تلقائياً، تعرض skeleton أثناء التحميل الأولي ومؤشر تحميل في الأسفل عند Load More.
+
+**الاستيراد:**
+
+```dart
+import 'package:shared_utils/widgets.dart';
+```
+
+**الاستخدام الأساسي:**
+
+```dart
+BlocBuilder<MyBloc, MyState>(
+  buildWhen: (previous, current) =>
+      current is MyLoadingState ||
+      current is MySuccessState ||
+      current is MyFailureState ||
+      current is MyLoadMoreLoadingState ||   // مهم: لتحديث isLoadMore
+      current is MyLoadMoreSuccessState,
+  builder: (context, state) {
+    final bool isLoading  = state is MyLoadingState;
+    final bool isLoadMore = state is MyLoadMoreLoadingState;
+
+    // عناصر skeleton أثناء التحميل الأولي
+    final List<MyModel> items = isLoading
+        ? List.generate(10, (_) => MyModel.empty())
+        : bloc.items.results;
+
+    return PaginatedListView<MyModel>(
+      items: items,
+      isLoading: isLoading,
+      isLoadMore: isLoadMore,
+      canLoadMore: bloc.items.next.isNotEmpty,
+      onLoadMore: () => bloc.add(const MyLoadMoreEvent()),
+      shimmerBaseColor: AppColors.of(context).muted,
+      shimmerContainersColor: AppColors.of(context).background,
+      loadMoreIndicatorColor: AppColors.of(context).primary,
+      loadMoreBackgroundColor: AppColors.of(context).secondary,
+      itemBuilder: (context, item) => MyItemWidget(item: item),
+    );
+  },
+)
+```
+
+**مع Pull-to-Refresh:**
+
+```dart
+PaginatedListView<MyModel>(
+  items: items,
+  isLoading: isLoading,
+  isLoadMore: isLoadMore,
+  canLoadMore: bloc.items.next.isNotEmpty,
+  onLoadMore: () => bloc.add(const MyLoadMoreEvent()),
+  onRefresh: () async {
+    bloc.add(const MyFetchEvent());
+    await Future.delayed(const Duration(seconds: 1));
+  },
+  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
+  shimmerBaseColor: AppColors.of(context).muted,
+  shimmerContainersColor: AppColors.of(context).background,
+  loadMoreIndicatorColor: AppColors.of(context).primary,
+  loadMoreBackgroundColor: AppColors.of(context).secondary,
+  itemBuilder: (context, item) => MyItemWidget(item: item),
+)
+```
+
+**مع ScrollController خارجي** (عند الحاجة للتحكم بالـ scroll من الخارج):
+
+```dart
+PaginatedListView<MyModel>(
+  scrollController: _myScrollController,
+  items: items,
+  isLoading: isLoading,
+  isLoadMore: isLoadMore,
+  canLoadMore: bloc.items.next.isNotEmpty,
+  onLoadMore: () => bloc.add(const MyLoadMoreEvent()),
+  shimmerBaseColor: AppColors.of(context).muted,
+  shimmerContainersColor: AppColors.of(context).background,
+  loadMoreIndicatorColor: AppColors.of(context).primary,
+  loadMoreBackgroundColor: AppColors.of(context).secondary,
+  itemBuilder: (context, item) => MyItemWidget(item: item),
+)
+```
+
+**Parameters:**
+
+| Parameter | النوع | الافتراضي | الوصف |
+|-----------|-------|-----------|-------|
+| `items` | `List<T>` | مطلوب | قائمة العناصر (تمرير عناصر `.empty()` عند `isLoading`) |
+| `isLoading` | `bool` | مطلوب | التحميل الأولي — يُظهر الـ skeleton |
+| `isLoadMore` | `bool` | مطلوب | تحميل صفحة إضافية — يُظهر مؤشر في الأسفل |
+| `canLoadMore` | `bool` | مطلوب | هل توجد صفحات إضافية (`base.next.isNotEmpty`) |
+| `onLoadMore` | `VoidCallback` | مطلوب | يُستدعى عند الوصول لنهاية القائمة |
+| `itemBuilder` | `Widget Function(BuildContext, T)` | مطلوب | بناء كل عنصر |
+| `onRefresh` | `Future<void> Function()?` | `null` | يُفعّل الـ RefreshIndicator عند تمريره |
+| `padding` | `EdgeInsets?` | `symmetric(h:20, v:32)` | padding القائمة |
+| `scrollController` | `ScrollController?` | داخلي | تمرير controller خارجي عند الحاجة |
+| `shimmerBaseColor` | `Color?` | `colorScheme.surfaceTint` | لون shimmer الـ skeleton |
+| `shimmerContainersColor` | `Color?` | `colorScheme.surface` | لون خلفية containers الـ skeleton |
+| `loadMoreIndicatorColor` | `Color?` | `colorScheme.primary` | لون مؤشر تحميل المزيد |
+| `loadMoreBackgroundColor` | `Color?` | `colorScheme.secondary` | لون خلفية مؤشر تحميل المزيد |
+
+> **ملاحظة:** `PaginatedListView` يدير الـ `ScrollController` داخلياً ويستدعي `onLoadMore` تلقائياً عند الاقتراب من نهاية القائمة بـ 200px. لا حاجة لـ `ScrollController` أو `_scrollListener` في الـ widget الأب.
+
+---
 
 ### showToast
 
