@@ -77,6 +77,7 @@ export 'src/services/update/app_update_checker.dart';
 export 'src/utils/helpers.dart';
 export 'src/utils/delay_handler.dart';
 export 'src/utils/phone/intl_phone_utils.dart';
+export 'src/utils/notification_utils.dart';
 
 
 // ═══════════════════════════════════════════════════════════════════════════
