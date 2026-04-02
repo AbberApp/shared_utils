@@ -1,20 +1,26 @@
 import 'dart:convert';
 import 'dart:developer';
 
-/// تحويل نص خام إلى Map قابل للاستخدام.
+/// تحويل قيمة خام إلى Map قابل للاستخدام.
+/// تقبل String أو Map أو null وتعالجها بشكل تكراري.
 /// تعالج booleans و single quotes تلقائياً،
 /// وتعالج القيم المتداخلة بشكل تكراري (Strings, Maps, Lists).
-Map<String, dynamic> parseToMap(String rawData) {
-  if (rawData.isEmpty) return {};
-  try {
-    final cleaned = _cleanRaw(rawData);
-    final decoded = jsonDecode(cleaned);
-    if (decoded is! Map) return {};
-    return _processMap(decoded);
-  } catch (e) {
-    log('Failed to parse data: $e', name: 'parseToMap');
-    return {};
+Map<String, dynamic> parseToMap(dynamic rawData) {
+  if (rawData == null) return {};
+  if (rawData is Map) return _processMap(rawData);
+  if (rawData is String) {
+    if (rawData.isEmpty) return {};
+    try {
+      final cleaned = _cleanRaw(rawData);
+      final decoded = jsonDecode(cleaned);
+      if (decoded is! Map) return {};
+      return _processMap(decoded);
+    } catch (e) {
+      log('Failed to parse data: $e', name: 'parseToMap');
+      return {};
+    }
   }
+  return {};
 }
 
 /// تنظيف النص الخام
