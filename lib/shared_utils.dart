@@ -27,6 +27,10 @@ export 'src/network/api/models/failure.dart';
 export 'src/network/api/models/response_code.dart';
 export 'src/network/api/models/response_message.dart';
 
+// API Consumer - مستهلك API
+export 'src/network/api/api_consumer.dart';
+export 'src/network/api/dio_consumer.dart';
+
 // API Handlers - معالجات API
 export 'src/network/api/handlers/error_handler.dart';
 export 'src/network/api/handlers/response_handler.dart';
