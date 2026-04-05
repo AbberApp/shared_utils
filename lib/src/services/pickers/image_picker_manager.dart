@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../widgets/toast.dart';
+import '../../ui/widgets/toast.dart';
 
 /// مصدر اختيار الصورة
 enum ImagePickerSource { camera, gallery }

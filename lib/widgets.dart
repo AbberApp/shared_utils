@@ -6,6 +6,6 @@
 /// ```
 library;
 
-export 'src/widgets/skeletonizer_widget.dart';
-export 'src/widgets/load_more_widget.dart';
-export 'src/widgets/paginated_list_view.dart';
+export 'src/ui/widgets/skeletonizer_widget.dart';
+export 'src/ui/widgets/load_more_widget.dart';
+export 'src/ui/widgets/paginated_list_view.dart';

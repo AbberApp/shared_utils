@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ua_client_hints/ua_client_hints.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../formatters/number_formatter.dart';
+import '../ui/formatters/number_formatter.dart';
 
 /// إخفاء لوحة المفاتيح
 void dismissKeyboard(BuildContext context) {

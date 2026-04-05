@@ -5,15 +5,15 @@ library;
 // Socket - WebSocket
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/socket/socket_manager.dart';
-export 'src/socket/socket_registry.dart';
+export 'src/realtime/socket/socket_manager.dart';
+export 'src/realtime/socket/socket_registry.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SSE - Server-Sent Events
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/sse/sse_manager.dart';
-export 'src/sse/sse_registry.dart';
+export 'src/realtime/sse/sse_manager.dart';
+export 'src/realtime/sse/sse_registry.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Network - الشبكة
@@ -39,40 +39,40 @@ export 'src/network/api/handlers/response_handler.dart';
 // Extensions - الإضافات
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/extensions/date/date_format_extension.dart';
-export 'src/extensions/string/string_extension.dart';
-export 'src/extensions/number/currency_extension.dart';
+export 'src/utils/extensions/date_format_extension.dart';
+export 'src/utils/extensions/string_extension.dart';
+export 'src/utils/extensions/currency_extension.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Formatters - المنسقات
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/formatters/number_formatter.dart';
-export 'src/formatters/card_formatter.dart';
-export 'src/formatters/text_formatter.dart';
-export 'src/formatters/phone_formatter.dart';
+export 'src/ui/formatters/number_formatter.dart';
+export 'src/ui/formatters/card_formatter.dart';
+export 'src/ui/formatters/text_formatter.dart';
+export 'src/ui/formatters/phone_formatter.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Pickers - منتقيات الملفات
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/pickers/file/file_picker_manager.dart';
-export 'src/pickers/image/image_picker_manager.dart';
+export 'src/services/pickers/file_picker_manager.dart';
+export 'src/services/pickers/image_picker_manager.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Widgets - عناصر الواجهة
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/widgets/toast.dart';
-export 'src/widgets/page_indicator.dart';
-export 'src/widgets/responsive_grid_view.dart';
+export 'src/ui/widgets/toast.dart';
+export 'src/ui/widgets/page_indicator.dart';
+export 'src/ui/widgets/responsive_grid_view.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Device Info - معلومات الجهاز
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/device_info/device_info_manager.dart';
-export 'src/device_info/models/device_info_model.dart';
+export 'src/device/device_info_manager.dart';
+export 'src/device/models/device_info_model.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Services - الخدمات
@@ -95,19 +95,18 @@ export 'src/utils/parse_to_map.dart';
 // Entities - البيانات
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/entities/entities.dart';
-export 'src/entities/base_entity.dart';
+export 'src/data/base_entity.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Agora - المكالمات والبث المباشر
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/agora/agora_call_service.dart';
-export 'src/agora/agora_live_service.dart';
+export 'src/realtime/agora/call/agora_call_service.dart';
+export 'src/realtime/agora/live/agora_live_service.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Call Services - خدمات المكالمات
 // ═══════════════════════════════════════════════════════════════════════════
 
-export 'src/call/microphone_service.dart';
-export 'src/call/speaker_service.dart';
+export 'src/realtime/agora/call/microphone_service.dart';
+export 'src/realtime/agora/call/speaker_service.dart';

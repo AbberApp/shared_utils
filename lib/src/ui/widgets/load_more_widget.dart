@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../entities/base_entity.dart';
+import '../../data/base_entity.dart';
 
 /// Widget يُعرض في نهاية القائمة لإظهار حالة تحميل المزيد.
 ///

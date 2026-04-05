@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 
-import '../utils/phone/intl_phone_utils.dart';
+import '../../utils/phone/intl_phone_utils.dart';
 import 'number_formatter.dart';
 
 /// منسق لأرقام الهواتف
