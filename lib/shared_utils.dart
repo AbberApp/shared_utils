@@ -104,3 +104,10 @@ export 'src/entities/base_entity.dart';
 
 export 'src/agora/agora_call_service.dart';
 export 'src/agora/agora_live_service.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Call Services - خدمات المكالمات
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/call/microphone_service.dart';
+export 'src/call/speaker_service.dart';
