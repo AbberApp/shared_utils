@@ -97,3 +97,10 @@ export 'src/utils/parse_to_map.dart';
 
 export 'src/entities/entities.dart';
 export 'src/entities/base_entity.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Agora - المكالمات والبث المباشر
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/agora/agora_call_service.dart';
+export 'src/agora/agora_live_service.dart';
