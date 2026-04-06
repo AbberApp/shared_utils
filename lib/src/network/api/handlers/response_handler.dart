@@ -13,14 +13,20 @@ dynamic handleResponse(Response<dynamic> response) {
 
     if (ResponseCode.isSuccessful(statusCode)) {
       return _handleSuccessResponse(statusCode, data, response, requestOptions);
-    } else if (ResponseCode.isClientError(statusCode)) {
+    } else if (ResponseCode.isBadHtmlResponse(data.toString())) {
+      throw DioException.badResponse(
+        statusCode: 500,
+        requestOptions: requestOptions,
+        response: response,
+      );
+    } else if (ResponseCode.isServerError(statusCode)) {
       throw DioException(
         requestOptions: requestOptions,
         response: response,
         error: data ?? 'حدث خطأ غير متوقع',
         type: _getDioExceptionType(statusCode),
       );
-    } else if (ResponseCode.isServerError(statusCode)) {
+    } else if (ResponseCode.isClientError(statusCode)) {
       throw DioException.badResponse(
         statusCode: statusCode,
         requestOptions: requestOptions,
