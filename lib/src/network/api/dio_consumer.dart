@@ -17,7 +17,8 @@ class DioConsumer implements ApiConsumer {
   }) {
     (client.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       final HttpClient client = HttpClient();
-      client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+      client.badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
       return client;
     };
 
@@ -33,7 +34,9 @@ class DioConsumer implements ApiConsumer {
 
     client.interceptors.add(appInterceptors);
     if (kDebugMode) {
-      client.interceptors.add(LogInterceptor());
+      client.interceptors.add(
+        LogInterceptor(requestBody: true, responseBody: true),
+      );
     }
     // تعيين قيم timeout هنا
     // 15 ثانية للاتصال
@@ -145,10 +148,7 @@ class DioConsumer implements ApiConsumer {
       queryParameters: queryParameters,
       data: FormData.fromMap(body),
       onSendProgress: onSendProgress,
-      options: Options(
-        sendTimeout: timeout,
-        receiveTimeout: timeout,
-      ),
+      options: Options(sendTimeout: timeout, receiveTimeout: timeout),
     );
   }
 }
