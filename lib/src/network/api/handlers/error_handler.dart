@@ -159,6 +159,9 @@ class ErrorHandler implements Exception {
         _parseResponseData(error.response?.data),
       );
     }
+    if (ResponseCode.isServerError(statusCode ?? 0)) {
+      return ErrorType.internalServerError.toFailure();
+    }
     return ErrorType.badRequest.toFailure();
   }
 
