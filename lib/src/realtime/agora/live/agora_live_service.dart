@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:typed_data';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/widgets.dart';
@@ -22,6 +24,9 @@ abstract class AgoraLiveService {
   /// The BLoC should fetch a new token and call [renewToken].
   void Function(String channel)? onTokenPrivilegeWillExpire;
 
+  /// Called when a revoke data stream message is received targeting a specific UID.
+  void Function(int targetUid)? onRevokeReceived;
+
   Future<void> initialize(String appId);
   Future<void> joinAsHost({required String token, required String channel, required int uid});
   Future<void> joinAsAudience({required String token, required String channel, required int uid});
@@ -34,6 +39,7 @@ abstract class AgoraLiveService {
   Future<void> unmuteRemoteAudio(int uid);
   Widget buildLocalVideoView();
   Widget buildRemoteVideoView(int uid);
+  Future<void> sendRevokeMessage(int targetUid);
   Future<void> leave();
   Future<void> dispose();
 
@@ -59,12 +65,17 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
   int? _remoteVideoUid;
   String? _channelId;
 
+  int? _dataStreamId;
+
   void Function(int uid)? onUserJoined;
   void Function(int uid)? onUserOffline;
   void Function(String message)? onError;
 
   @override
   void Function(String channel)? onTokenPrivilegeWillExpire;
+
+  @override
+  void Function(int targetUid)? onRevokeReceived;
 
   @override
   Stream<bool> get isMutedStream => _isMutedController?.stream ?? const Stream.empty();
@@ -226,6 +237,21 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
           );
           onTokenPrivilegeWillExpire?.call(connection.channelId ?? '');
         },
+        onStreamMessage: (connection, remoteUid, streamId, data, length, sentTs) {
+          try {
+            final message = utf8.decode(data);
+            final map = jsonDecode(message) as Map<String, dynamic>;
+            if (map['action'] == 'revoke') {
+              final targetUid = map['target_uid'] as int?;
+              if (targetUid != null) {
+                log('Data stream revoke received — target: $targetUid', name: 'AgoraLiveService');
+                onRevokeReceived?.call(targetUid);
+              }
+            }
+          } catch (e) {
+            log('Failed to parse stream message: $e', name: 'AgoraLiveService');
+          }
+        },
       ),
     );
 
@@ -253,6 +279,9 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
         autoSubscribeAudio: true,
       ),
     );
+    _dataStreamId = await _engine!.createDataStream(
+      const DataStreamConfig(syncWithAudio: false, ordered: true),
+    );
   }
 
   @override
@@ -279,6 +308,9 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
         autoSubscribeAudio: true,
         autoSubscribeVideo: true,
       ),
+    );
+    _dataStreamId = await _engine!.createDataStream(
+      const DataStreamConfig(syncWithAudio: false, ordered: true),
     );
   }
 
@@ -369,6 +401,20 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
   }
 
   @override
+  Future<void> sendRevokeMessage(int targetUid) async {
+    if (_dataStreamId == null || _engine == null) return;
+    final encoded = Uint8List.fromList(
+      utf8.encode(jsonEncode({'action': 'revoke', 'target_uid': targetUid})),
+    );
+    await _engine!.sendStreamMessage(
+      streamId: _dataStreamId!,
+      data: encoded,
+      length: encoded.length,
+    );
+    log('Data stream revoke sent — target: $targetUid', name: 'AgoraLiveService');
+  }
+
+  @override
   Future<void> muteRemoteAudio(int uid) async {
     await _engine?.muteRemoteAudioStream(uid: uid, mute: true);
     log('Remote audio muted: $uid', name: 'AgoraLiveService');
@@ -409,7 +455,9 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
     _isSpeaker = false;
     _remoteVideoUid = null;
     _channelId = null;
+    _dataStreamId = null;
     onTokenPrivilegeWillExpire = null;
+    onRevokeReceived = null;
     onUserJoined = null;
     onUserOffline = null;
     onError = null;
