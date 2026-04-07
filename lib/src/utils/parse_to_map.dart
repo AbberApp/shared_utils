@@ -50,7 +50,7 @@ String _fixUnquotedJson(String s) {
   // اقتباس قيم النصوص غير المقتبسة بعد ':'
   // يتجاهل: الأرقام، booleans، null، objects، arrays، القيم المقتبسة مسبقاً
   s = s.replaceAllMapped(
-    RegExp(r'(:\s*)([^"{}\[\]\d\-,\s][^,}\]"]*)(\s*(?=[,}]))'),
+    RegExp(r'(:\s*)([^"{}\[\],\s][^,}\]"]*)(\s*(?=[,}]))'),
     (m) {
       final v = (m[2] ?? '').trim();
       if (v == 'true' || v == 'false' || v == 'null') return '${m[1]}$v${m[3]}';
