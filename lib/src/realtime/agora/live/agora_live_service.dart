@@ -55,6 +55,7 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
   bool _isMuted = false;
   bool _isCameraOn = false;
   bool _isHost = false;
+  bool _isSpeaker = false;
   int? _remoteVideoUid;
   String? _channelId;
 
@@ -143,6 +144,12 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
     _isMuted = false;
     _isCameraOn = false;
     _isHost = false;
+    _remoteVideoUid = null;
+
+    _isMuted = false;
+    _isCameraOn = false;
+    _isHost = false;
+    _isSpeaker = false;
     _remoteVideoUid = null;
 
     // تسجيل الـ service كـ observer لدورة حياة التطبيق
@@ -256,6 +263,7 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
   }) async {
     _channelId = channel;
     _isHost = false;
+    _isSpeaker = false;
     // تفعيل pipeline الفيديو لاستقبال بث المضيف مع كتم الكاميرا المحلية
     await _engine!.enableVideo();
     await _engine!.muteLocalVideoStream(true);
@@ -276,8 +284,10 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
 
   @override
   Future<void> promoteToSpeaker() async {
+    if (_isSpeaker) return;
     // المشارك المرفوع يحصل على الميكروفون فقط — الكاميرا ممنوعة منعاً باتاً
     _isHost = false;
+    _isSpeaker = true;
     await _engine!.muteLocalVideoStream(true);
     await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
     await _engine!.updateChannelMediaOptions(
@@ -291,6 +301,7 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
 
   @override
   Future<void> demoteToAudience() async {
+    _isSpeaker = false;
     // إيقاف الكاميرا صراحةً عند التخفيض حتى لو كانت شغّالة
     _isCameraOn = false;
     _isCameraOnController?.add(false);
@@ -395,6 +406,7 @@ class AgoraLiveServiceImpl with WidgetsBindingObserver implements AgoraLiveServi
     _isMuted = false;
     _isCameraOn = false;
     _isHost = false;
+    _isSpeaker = false;
     _remoteVideoUid = null;
     _channelId = null;
     onTokenPrivilegeWillExpire = null;
