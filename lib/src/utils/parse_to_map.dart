@@ -10,9 +10,19 @@ Map<String, dynamic> parseToMap(dynamic rawData) {
   if (rawData is Map) return _processMap(rawData);
   if (rawData is String) {
     if (rawData.isEmpty) return {};
+
+    // محاولة أولى: تنظيف عادي
     try {
       final cleaned = _cleanRaw(rawData);
       final decoded = jsonDecode(cleaned);
+      if (decoded is! Map) return {};
+      return _processMap(decoded);
+    } catch (_) {}
+
+    // محاولة ثانية: إصلاح المفاتيح والقيم غير المقتبسة (صيغة Dart/Python toString)
+    try {
+      final fixed = _fixUnquotedJson(_cleanRaw(rawData));
+      final decoded = jsonDecode(fixed);
       if (decoded is! Map) return {};
       return _processMap(decoded);
     } catch (e) {
@@ -28,6 +38,29 @@ String _cleanRaw(String raw) => raw
     .replaceAll('True', 'true')
     .replaceAll('False', 'false')
     .replaceAll("'", '"');
+
+/// إصلاح صيغة {key: value} غير المقتبسة (ناتج Dart/Python toString)
+String _fixUnquotedJson(String s) {
+  // اقتباس المفاتيح غير المقتبسة: word chars قبل ':'
+  s = s.replaceAllMapped(
+    RegExp(r'(?<=[{,]\s*)([A-Za-z_]\w*)(?=\s*:)'),
+    (m) => '"${m[1]}"',
+  );
+
+  // اقتباس قيم النصوص غير المقتبسة بعد ':'
+  // يتجاهل: الأرقام، booleans، null، objects، arrays، القيم المقتبسة مسبقاً
+  s = s.replaceAllMapped(
+    RegExp(r'(:\s*)([^"{}\[\]\d\-,\s][^,}\]"]*)(\s*(?=[,}]))'),
+    (m) {
+      final v = (m[2] ?? '').trim();
+      if (v == 'true' || v == 'false' || v == 'null') return '${m[1]}$v${m[3]}';
+      if (double.tryParse(v) != null) return '${m[1]}$v${m[3]}';
+      return '${m[1]}"$v"${m[3]}';
+    },
+  );
+
+  return s;
+}
 
 /// معالجة Map بشكل تكراري
 Map<String, dynamic> _processMap(Map map) {
