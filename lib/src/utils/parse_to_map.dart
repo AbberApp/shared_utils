@@ -74,7 +74,12 @@ Map<String, dynamic> _processMap(Map map) {
 dynamic _processValue(dynamic value) {
   if (value is Map) return _processMap(value);
   if (value is List) return value.map(_processValue).toList();
-  if (value is String) return _tryParseString(value);
+  if (value is String) {
+    // تحويل boolean strings (Python/Dart) إلى bool حقيقي
+    if (value == 'True' || value == 'true') return true;
+    if (value == 'False' || value == 'false') return false;
+    return _tryParseString(value);
+  }
   return value;
 }
 
