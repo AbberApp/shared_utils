@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.4.1
+version: 2.3.9
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -50,8 +50,6 @@ dependencies:
   in_app_update: ^4.2.5
   json_annotation: ^4.10.0
 
-  # Firebase Messaging - للإشعارات
-  firebase_messaging: ^16.1.0
 
 dev_dependencies:
   flutter_test:
