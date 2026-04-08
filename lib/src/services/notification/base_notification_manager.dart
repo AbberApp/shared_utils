@@ -39,20 +39,6 @@ class BaseNotificationManager {
     }
   }
 
-  /// VoIP token لـ iOS فقط
-  Future<String> getDevicePushTokenVoIP() async {
-    if (Platform.isAndroid) return '';
-    if (!_delegate.supportsVoIP) return '';
-    try {
-      // يُستدعى من المشروع مباشرةً لتجنب import مباشر لـ FlutterCallkitIncoming
-      log('getDevicePushTokenVoIP: يجب استدعاؤها من AppNotificationDelegate', name: 'BaseNotificationManager');
-      return '';
-    } catch (e) {
-      log('$e', name: 'BaseNotificationManager');
-      return '';
-    }
-  }
-
   void subscribeToTopic(String topic) {
     try {
       FirebaseMessaging.instance.subscribeToTopic(topic);

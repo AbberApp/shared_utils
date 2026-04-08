@@ -6,9 +6,6 @@ abstract class NotificationDelegate {
   /// أنواع الإشعارات التي يجب تجاهلها (مثل 'calling' في الخلفية)
   List<String> get ignoredTypes;
 
-  /// هل يدعم VoIP (FlutterCallkitIncoming)
-  bool get supportsVoIP;
-
   /// هل يدعم CallKit
   bool get supportsCallKit;
 
