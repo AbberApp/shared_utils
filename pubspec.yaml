@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.3.9
+version: 2.4.0
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -17,12 +17,6 @@ dependencies:
   dio: ^5.9.0
   connectivity_plus: ^7.0.0
   web_socket_channel: ^3.0.3
-
-  # Agora RTC - للمكالمات والبث المباشر
-  agora_rtc_engine: ^6.5.3
-
-  # Audio Session - إدارة جلسة الصوت
-  audio_session: ^0.2.2
 
   # File & Image Pickers
   file_picker: ^10.3.10
