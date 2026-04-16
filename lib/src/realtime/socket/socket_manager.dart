@@ -123,8 +123,9 @@ class SocketManager with WidgetsBindingObserver {
           final int? code = channel.closeCode;
           log('onDone code=$code', name: 'wss $url');
           _closeChannel();
-          final bool isNormalClose = code == 1000;
-          if (!_intentionalClose && _enableReconnect && !isNormalClose) {
+          // 1000 = normal close, 4xxx = application-level deliberate close (e.g. order_completed, forbidden)
+          final bool isPermanentClose = code == 1000 || (code != null && code >= 4000);
+          if (!_intentionalClose && _enableReconnect && !isPermanentClose) {
             _scheduleReconnect();
           } else {
             _doneCallback?.call('onDone');
