@@ -127,7 +127,7 @@ extension DateFormatExtension on DateTime {
 
     final years = diff.inDays ~/ 365;
     final months = (diff.inDays % 365) ~/ 30;
-    return months > 0 ? '$years س و $months ش' : '$years س';
+    return months > 0 ? '$years سن و $months ش' : '$years سن';
   }
 
   /// تنسيق "منذ..." بالعربية الكاملة
