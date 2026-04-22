@@ -11,6 +11,7 @@ const Map<String, int> _ibanLengths = {
   'BE': 16, // Belgium
   'BG': 22, // Bulgaria
   'BH': 22, // Bahrain
+  'BI': 27, // Burundi
   'BR': 29, // Brazil
   'BY': 28, // Belarus
   'CH': 21, // Switzerland
@@ -18,12 +19,14 @@ const Map<String, int> _ibanLengths = {
   'CY': 28, // Cyprus
   'CZ': 24, // Czech Republic
   'DE': 22, // Germany
+  'DJ': 27, // Djibouti
   'DK': 18, // Denmark
   'DO': 28, // Dominican Republic
   'EE': 20, // Estonia
   'EG': 29, // Egypt
   'ES': 24, // Spain
   'FI': 18, // Finland
+  'FK': 18, // Falkland Islands
   'FO': 18, // Faroe Islands
   'FR': 27, // France
   'GB': 22, // United Kingdom
@@ -32,6 +35,7 @@ const Map<String, int> _ibanLengths = {
   'GL': 18, // Greenland
   'GR': 27, // Greece
   'GT': 28, // Guatemala
+  'HN': 28, // Honduras
   'HR': 21, // Croatia
   'HU': 28, // Hungary
   'IE': 22, // Ireland
@@ -52,10 +56,12 @@ const Map<String, int> _ibanLengths = {
   'MC': 27, // Monaco
   'MD': 24, // Moldova
   'ME': 22, // Montenegro
+  'MN': 20, // Mongolia
   'MK': 19, // North Macedonia
   'MR': 27, // Mauritania
   'MT': 31, // Malta
   'MU': 30, // Mauritius
+  'NI': 28, // Nicaragua
   'NL': 18, // Netherlands
   'NO': 15, // Norway
   'OM': 23, // Oman
