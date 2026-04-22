@@ -92,6 +92,79 @@ class IntlPhoneUtils {
     return '';
   }
 
+  /// التحقق من صحة رقم الهاتف بالاعتماد على بادئة الرقم الوطني (NSN).
+  /// يقبل الصيغة الكاملة مثل +966XXXXXXXXX أو 966XXXXXXXXX.
+  static PhoneValidationResult validatePhone(String fullPhone) {
+    final String phone = fullPhone.startsWith('+') ? fullPhone.substring(1) : fullPhone;
+
+    // البحث عن الدولة بأطول تطابق لرمز الاتصال
+    CountryModel? matchedCountry;
+    for (final country in countries) {
+      if (phone.startsWith(country.dialCode)) {
+        if (matchedCountry == null || country.dialCode.length > matchedCountry.dialCode.length) {
+          matchedCountry = country;
+        }
+      }
+    }
+
+    if (matchedCountry == null) {
+      return const PhoneValidationResult(isValid: false, error: 'رمز الدولة غير معروف');
+    }
+
+    final String nsn = phone.substring(matchedCountry.dialCode.length);
+
+    // البحث عن أطول بادئة متطابقة في prefixLengths
+    int expectedLength = -1;
+    int bestPrefixLen = 0;
+    for (final entry in matchedCountry.prefixLengths.entries) {
+      if (nsn.startsWith(entry.key) && entry.key.length > bestPrefixLen) {
+        expectedLength = entry.value;
+        bestPrefixLen = entry.key.length;
+      }
+    }
+
+    if (expectedLength != -1) {
+      final bool isValid = nsn.length == expectedLength;
+      return PhoneValidationResult(
+        isValid: isValid,
+        country: matchedCountry,
+        error: isValid ? null : 'الطول المتوقع $expectedLength أرقام',
+      );
+    }
+
+    // الاحتياطي: التحقق بنطاق الدولة
+    final bool isValid = nsn.length >= matchedCountry.minLength && nsn.length <= matchedCountry.maxLength;
+    return PhoneValidationResult(
+      isValid: isValid,
+      country: matchedCountry,
+      error: isValid ? null : 'الطول المتوقع ${matchedCountry.minLength}–${matchedCountry.maxLength} أرقام',
+    );
+  }
+
+  /// الحصول على الطول الدقيق للرقم بناءً على بادئته (أو null إذا لم تُعرَّف بادئة)
+  static int? getExactLength(String fullPhone) {
+    final String phone = fullPhone.startsWith('+') ? fullPhone.substring(1) : fullPhone;
+    CountryModel? matchedCountry;
+    for (final country in countries) {
+      if (phone.startsWith(country.dialCode)) {
+        if (matchedCountry == null || country.dialCode.length > matchedCountry.dialCode.length) {
+          matchedCountry = country;
+        }
+      }
+    }
+    if (matchedCountry == null) return null;
+    final String nsn = phone.substring(matchedCountry.dialCode.length);
+    int bestPrefixLen = 0;
+    int? length;
+    for (final entry in matchedCountry.prefixLengths.entries) {
+      if (nsn.startsWith(entry.key) && entry.key.length > bestPrefixLen) {
+        length = entry.value;
+        bestPrefixLen = entry.key.length;
+      }
+    }
+    return length;
+  }
+
   /// التحقق مما إذا كانت السلسلة عبارة عن رقم
   static bool isNumeric(String s) => s.isNotEmpty && int.tryParse(s.replaceAll('+', '')) != null;
 
@@ -218,8 +291,8 @@ class IntlPhoneUtils {
       'flag': '🇦🇽',
       'code': 'AX',
       'dialCode': '358',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 9,
+      'maxLength': 10,
     },
     {
       'name': 'Albania',
@@ -282,6 +355,7 @@ class IntlPhoneUtils {
       'dialCode': '213',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'5': 9, '6': 9, '7': 9},
     },
     {
       'name': 'American Samoa',
@@ -497,8 +571,8 @@ class IntlPhoneUtils {
       'flag': '🇦🇷',
       'code': 'AR',
       'dialCode': '54',
-      'minLength': 12,
-      'maxLength': 12,
+      'minLength': 10,
+      'maxLength': 10,
     },
     {
       'name': 'Armenia',
@@ -592,6 +666,7 @@ class IntlPhoneUtils {
       'dialCode': '61',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'4': 9},
     },
     {
       'name': 'Austria',
@@ -621,8 +696,8 @@ class IntlPhoneUtils {
       'flag': '🇦🇹',
       'code': 'AT',
       'dialCode': '43',
-      'minLength': 13,
-      'maxLength': 13,
+      'minLength': 10,
+      'maxLength': 11,
     },
     {
       'name': 'Azerbaijan',
@@ -716,6 +791,7 @@ class IntlPhoneUtils {
       'dialCode': '973',
       'minLength': 8,
       'maxLength': 8,
+      'prefixLengths': {'3': 8, '6': 8},
     },
     {
       'name': 'Bahrain',
@@ -747,6 +823,7 @@ class IntlPhoneUtils {
       'dialCode': '973',
       'minLength': 8,
       'maxLength': 8,
+      'prefixLengths': {'3': 8, '6': 8},
     },
     {
       'name': 'Bangladesh',
@@ -778,6 +855,7 @@ class IntlPhoneUtils {
       'dialCode': '880',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'1': 10},
     },
     {
       'name': 'Barbados',
@@ -1148,8 +1226,8 @@ class IntlPhoneUtils {
       'flag': '🇧🇻',
       'code': 'BV',
       'dialCode': '47',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 8,
+      'maxLength': 8,
     },
     {
       'name': 'Brazil',
@@ -1181,6 +1259,7 @@ class IntlPhoneUtils {
       'dialCode': '55',
       'minLength': 11,
       'maxLength': 11,
+      'prefixLengths': {'9': 11},
     },
     {
       'name': 'British Indian Ocean Territory',
@@ -1583,7 +1662,8 @@ class IntlPhoneUtils {
       'code': 'CN',
       'dialCode': '86',
       'minLength': 11,
-      'maxLength': 12,
+      'maxLength': 11,
+      'prefixLengths': {'1': 11},
     },
     {
       'name': 'Christmas Island',
@@ -1613,8 +1693,8 @@ class IntlPhoneUtils {
       'flag': '🇨🇽',
       'code': 'CX',
       'dialCode': '61',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Cocos (Keeling) Islands',
@@ -1644,8 +1724,8 @@ class IntlPhoneUtils {
       'flag': '🇨🇨',
       'code': 'CC',
       'dialCode': '61',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Colombia',
@@ -1737,8 +1817,8 @@ class IntlPhoneUtils {
       'flag': '🇨🇬',
       'code': 'CG',
       'dialCode': '242',
-      'minLength': 7,
-      'maxLength': 7,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Congo, The Democratic Republic of the Congo',
@@ -1892,8 +1972,8 @@ class IntlPhoneUtils {
       'flag': '🇭🇷',
       'code': 'HR',
       'dialCode': '385',
-      'minLength': 12,
-      'maxLength': 12,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Cuba',
@@ -2047,8 +2127,8 @@ class IntlPhoneUtils {
       'flag': '🇩🇯',
       'code': 'DJ',
       'dialCode': '253',
-      'minLength': 6,
-      'maxLength': 6,
+      'minLength': 8,
+      'maxLength': 8,
     },
     {
       'name': 'Dominica',
@@ -2173,6 +2253,7 @@ class IntlPhoneUtils {
       'dialCode': '20',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'10': 10, '11': 10, '12': 10, '15': 10},
     },
     {
       'name': 'El Salvador',
@@ -2202,8 +2283,8 @@ class IntlPhoneUtils {
       'flag': '🇸🇻',
       'code': 'SV',
       'dialCode': '503',
-      'minLength': 11,
-      'maxLength': 11,
+      'minLength': 8,
+      'maxLength': 8,
     },
     {
       'name': 'Equatorial Guinea',
@@ -2233,8 +2314,8 @@ class IntlPhoneUtils {
       'flag': '🇬🇶',
       'code': 'GQ',
       'dialCode': '240',
-      'minLength': 6,
-      'maxLength': 6,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Eritrea',
@@ -2450,8 +2531,8 @@ class IntlPhoneUtils {
       'flag': '🇫🇮',
       'code': 'FI',
       'dialCode': '358',
-      'minLength': 12,
-      'maxLength': 12,
+      'minLength': 9,
+      'maxLength': 10,
     },
     {
       'name': 'France',
@@ -2483,6 +2564,7 @@ class IntlPhoneUtils {
       'dialCode': '33',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'6': 9, '7': 9},
     },
     {
       'name': 'French Guiana',
@@ -2512,8 +2594,8 @@ class IntlPhoneUtils {
       'flag': '🇬🇫',
       'code': 'GF',
       'dialCode': '594',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'French Polynesia',
@@ -2574,8 +2656,8 @@ class IntlPhoneUtils {
       'flag': '🇹🇫',
       'code': 'TF',
       'dialCode': '262',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Gabon',
@@ -2698,8 +2780,15 @@ class IntlPhoneUtils {
       'flag': '🇩🇪',
       'code': 'DE',
       'dialCode': '49',
-      'minLength': 9,
+      'minLength': 5,
       'maxLength': 13,
+      'prefixLengths': {
+        // Mobile — 3-digit prefixes (longest-match wins over 2-digit)
+        '150': 10, '151': 11, '152': 11, '155': 11, '157': 11, '159': 11,
+        '160': 10, '162': 10, '163': 10,
+        '170': 10, '171': 10, '172': 10, '173': 10, '174': 10, '175': 10,
+        '176': 11, '177': 11, '178': 11, '179': 11,
+      },
     },
     {
       'name': 'Ghana',
@@ -2884,8 +2973,8 @@ class IntlPhoneUtils {
       'flag': '🇬🇵',
       'code': 'GP',
       'dialCode': '590',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Guam',
@@ -3132,8 +3221,8 @@ class IntlPhoneUtils {
       'flag': '🇭🇲',
       'code': 'HM',
       'dialCode': '672',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 6,
+      'maxLength': 6,
     },
     {
       'name': 'Holy See (Vatican City State)',
@@ -3320,6 +3409,7 @@ class IntlPhoneUtils {
       'dialCode': '91',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'6': 10, '7': 10, '8': 10, '9': 10},
     },
     {
       'name': 'Indonesia',
@@ -3351,6 +3441,24 @@ class IntlPhoneUtils {
       'dialCode': '62',
       'minLength': 10,
       'maxLength': 13,
+      'prefixLengths': {
+        '811': 11, '812': 12, '813': 12,
+        '814': 12, '815': 12, '816': 12,
+        '817': 11, '818': 11, '819': 12,
+        '821': 12, '822': 12, '823': 12,
+        '824': 12, '825': 12, '826': 12,
+        '827': 12, '828': 12, '831': 12,
+        '832': 12, '833': 12, '838': 12,
+        '851': 12, '852': 12, '853': 12,
+        '855': 12, '856': 12, '857': 12,
+        '858': 12, '859': 12, '877': 12,
+        '878': 12, '879': 12, '881': 11,
+        '882': 12, '883': 12, '884': 12,
+        '885': 12, '886': 12, '887': 12,
+        '888': 11, '889': 12, '895': 12,
+        '896': 12, '897': 12, '898': 12,
+        '899': 12,
+      },
     },
     {
       'name': 'Iran, Islamic Republic of Persian Gulf',
@@ -3382,6 +3490,7 @@ class IntlPhoneUtils {
       'dialCode': '98',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'9': 10},
     },
     {
       'name': 'Iraq',
@@ -3413,6 +3522,7 @@ class IntlPhoneUtils {
       'dialCode': '964',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'70': 10, '75': 10, '76': 10, '77': 10, '78': 10, '79': 10},
     },
     {
       'name': 'Ireland',
@@ -3599,6 +3709,7 @@ class IntlPhoneUtils {
       'dialCode': '81',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'70': 10, '80': 10, '90': 10},
     },
     {
       'name': 'Jersey',
@@ -3661,6 +3772,7 @@ class IntlPhoneUtils {
       'dialCode': '962',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'7': 9},
     },
     {
       'name': 'Kazakhstan',
@@ -3723,6 +3835,7 @@ class IntlPhoneUtils {
       'dialCode': '254',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'7': 10},
     },
     {
       'name': 'Kiribati',
@@ -3814,8 +3927,9 @@ class IntlPhoneUtils {
       'flag': '🇰🇷',
       'code': 'KR',
       'dialCode': '82',
-      'minLength': 11,
-      'maxLength': 11,
+      'minLength': 9,
+      'maxLength': 10,
+      'prefixLengths': {'10': 10},
     },
     {
       'name': 'Kuwait',
@@ -3847,6 +3961,7 @@ class IntlPhoneUtils {
       'dialCode': '965',
       'minLength': 8,
       'maxLength': 8,
+      'prefixLengths': {'5': 8, '6': 8, '9': 8},
     },
     {
       'name': 'Kyrgyzstan',
@@ -3971,6 +4086,7 @@ class IntlPhoneUtils {
       'dialCode': '961',
       'minLength': 8,
       'maxLength': 8,
+      'prefixLengths': {'70': 8, '71': 8, '76': 8, '78': 8, '79': 8, '81': 8},
     },
     {
       'name': 'Lesotho',
@@ -4064,6 +4180,7 @@ class IntlPhoneUtils {
       'dialCode': '218',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'9': 9},
     },
     {
       'name': 'Liechtenstein',
@@ -4155,8 +4272,8 @@ class IntlPhoneUtils {
       'flag': '🇱🇺',
       'code': 'LU',
       'dialCode': '352',
-      'minLength': 11,
-      'maxLength': 11,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Macao',
@@ -4310,8 +4427,9 @@ class IntlPhoneUtils {
       'flag': '🇲🇾',
       'code': 'MY',
       'dialCode': '60',
-      'minLength': 11,
-      'maxLength': 11,
+      'minLength': 9,
+      'maxLength': 10,
+      'prefixLengths': {'11': 10, '14': 9, '15': 10, '16': 9, '17': 9, '18': 9, '19': 9},
     },
     {
       'name': 'Maldives',
@@ -4465,8 +4583,8 @@ class IntlPhoneUtils {
       'flag': '🇲🇶',
       'code': 'MQ',
       'dialCode': '596',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Mauritania',
@@ -4591,6 +4709,7 @@ class IntlPhoneUtils {
       'dialCode': '52',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'1': 10, '2': 10, '3': 10, '4': 10, '5': 10, '6': 10, '7': 10, '8': 10, '9': 10},
     },
     {
       'name': 'Micronesia, Federated States of Micronesia',
@@ -4744,8 +4863,8 @@ class IntlPhoneUtils {
       'flag': '🇲🇪',
       'code': 'ME',
       'dialCode': '382',
-      'minLength': 12,
-      'maxLength': 12,
+      'minLength': 8,
+      'maxLength': 9,
     },
     {
       'name': 'Montserrat',
@@ -4808,6 +4927,7 @@ class IntlPhoneUtils {
       'dialCode': '212',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'6': 9, '7': 9},
     },
     {
       'name': 'Mozambique',
@@ -5149,6 +5269,7 @@ class IntlPhoneUtils {
       'dialCode': '234',
       'minLength': 10,
       'maxLength': 11,
+      'prefixLengths': {'70': 10, '80': 10, '81': 10, '90': 10, '91': 10},
     },
     {
       'name': 'Niue',
@@ -5209,8 +5330,8 @@ class IntlPhoneUtils {
       'flag': '🇳🇫',
       'code': 'NF',
       'dialCode': '672',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 6,
+      'maxLength': 6,
     },
     {
       'name': 'Northern Mariana Islands',
@@ -5273,6 +5394,7 @@ class IntlPhoneUtils {
       'dialCode': '968',
       'minLength': 8,
       'maxLength': 8,
+      'prefixLengths': {'7': 8, '9': 8},
     },
     {
       'name': 'Pakistan',
@@ -5304,6 +5426,7 @@ class IntlPhoneUtils {
       'dialCode': '92',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'3': 10},
     },
     {
       'name': 'Palau',
@@ -5366,6 +5489,7 @@ class IntlPhoneUtils {
       'dialCode': '970',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'5': 9},
     },
     {
       'name': 'Panama',
@@ -5426,8 +5550,8 @@ class IntlPhoneUtils {
       'flag': '🇵🇬',
       'code': 'PG',
       'dialCode': '675',
-      'minLength': 11,
-      'maxLength': 11,
+      'minLength': 8,
+      'maxLength': 8,
     },
     {
       'name': 'Paraguay',
@@ -5521,6 +5645,7 @@ class IntlPhoneUtils {
       'dialCode': '63',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'9': 10},
     },
     {
       'name': 'Pitcairn',
@@ -5643,8 +5768,8 @@ class IntlPhoneUtils {
       'flag': '🇵🇷',
       'code': 'PR',
       'dialCode': '1939',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 10,
+      'maxLength': 10,
     },
     {
       'name': 'Qatar',
@@ -5676,6 +5801,7 @@ class IntlPhoneUtils {
       'dialCode': '974',
       'minLength': 8,
       'maxLength': 8,
+      'prefixLengths': {'3': 8, '5': 8, '6': 8, '7': 8},
     },
     {
       'name': 'Romania',
@@ -5738,6 +5864,7 @@ class IntlPhoneUtils {
       'dialCode': '7',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'9': 10},
     },
     {
       'name': 'Rwanda',
@@ -6141,6 +6268,7 @@ class IntlPhoneUtils {
       'dialCode': '966',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'5': 9},
     },
     {
       'name': 'Senegal',
@@ -6201,8 +6329,8 @@ class IntlPhoneUtils {
       'flag': '🇷🇸',
       'code': 'RS',
       'dialCode': '381',
-      'minLength': 12,
-      'maxLength': 12,
+      'minLength': 9,
+      'maxLength': 9,
     },
     {
       'name': 'Seychelles',
@@ -6451,6 +6579,7 @@ class IntlPhoneUtils {
       'dialCode': '27',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'6': 9, '7': 9, '8': 9},
     },
     {
       'name': 'South Sudan',
@@ -6511,8 +6640,8 @@ class IntlPhoneUtils {
       'flag': '🇬🇸',
       'code': 'GS',
       'dialCode': '500',
-      'minLength': 15,
-      'maxLength': 15,
+      'minLength': 5,
+      'maxLength': 5,
     },
     {
       'name': 'Spain',
@@ -6606,6 +6735,7 @@ class IntlPhoneUtils {
       'dialCode': '249',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'9': 9},
     },
     {
       'name': 'Suriname',
@@ -6792,6 +6922,7 @@ class IntlPhoneUtils {
       'dialCode': '963',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'9': 9},
     },
     {
       'name': 'Taiwan',
@@ -6916,6 +7047,7 @@ class IntlPhoneUtils {
       'dialCode': '66',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'6': 9, '8': 9, '9': 9},
     },
     {
       'name': 'Timor-Leste',
@@ -7102,6 +7234,7 @@ class IntlPhoneUtils {
       'dialCode': '216',
       'minLength': 8,
       'maxLength': 8,
+      'prefixLengths': {'2': 8, '4': 8, '5': 8, '9': 8},
     },
     {
       'name': 'Turkey',
@@ -7133,6 +7266,7 @@ class IntlPhoneUtils {
       'dialCode': '90',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'5': 10},
     },
     {
       'name': 'Turkmenistan',
@@ -7319,6 +7453,7 @@ class IntlPhoneUtils {
       'dialCode': '971',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'5': 9},
     },
     {
       'name': 'United Kingdom',
@@ -7350,6 +7485,7 @@ class IntlPhoneUtils {
       'dialCode': '44',
       'minLength': 10,
       'maxLength': 10,
+      'prefixLengths': {'7': 10},
     },
     {
       'name': 'United States',
@@ -7534,8 +7670,9 @@ class IntlPhoneUtils {
       'flag': '🇻🇳',
       'code': 'VN',
       'dialCode': '84',
-      'minLength': 11,
-      'maxLength': 11,
+      'minLength': 9,
+      'maxLength': 10,
+      'prefixLengths': {'3': 9, '5': 9, '7': 9, '8': 9, '9': 9},
     },
     {
       'name': 'Virgin Islands, British',
@@ -7660,6 +7797,7 @@ class IntlPhoneUtils {
       'dialCode': '967',
       'minLength': 9,
       'maxLength': 9,
+      'prefixLengths': {'7': 9},
     },
     {
       'name': 'Zambia',
@@ -7765,6 +7903,19 @@ class PhoneNumber {
   String get completeNumber => '$countryCode$number';
 }
 
+/// نتيجة التحقق من رقم الهاتف
+class PhoneValidationResult {
+  final bool isValid;
+  final CountryModel? country;
+  final String? error;
+
+  const PhoneValidationResult({
+    required this.isValid,
+    this.country,
+    this.error,
+  });
+}
+
 /// نموذج الدولة
 class CountryModel {
   final String name;
@@ -7775,6 +7926,12 @@ class CountryModel {
   final int minLength;
   final int maxLength;
 
+  /// خريطة البادئة → الطول الدقيق للرقم الوطني (NSN).
+  /// مثال SA: {'5': 9} — كل الأرقام المحلية تبدأ بـ5 وطولها 9.
+  /// مثال DE: {'150': 10, '151': 11, ...} — البادئة تُحدد الطول.
+  /// إذا كانت فارغة يُستخدم minLength/maxLength كاحتياطي.
+  final Map<String, int> prefixLengths;
+
   const CountryModel({
     required this.name,
     required this.flag,
@@ -7783,6 +7940,7 @@ class CountryModel {
     required this.nameTranslations,
     required this.minLength,
     required this.maxLength,
+    this.prefixLengths = const {},
   });
 
   String get fullCountryCode => dialCode;
@@ -7800,6 +7958,9 @@ class CountryModel {
       nameTranslations[entry.key] = entry.value as String;
     }
 
+    final Map<String, dynamic>? plJson = json['prefixLengths'] as Map<String, dynamic>?;
+    final Map<String, int> prefixLengths = plJson?.map((k, v) => MapEntry(k, v as int)) ?? const {};
+
     return CountryModel(
       name: json['name'],
       flag: json['flag'],
@@ -7808,6 +7969,7 @@ class CountryModel {
       nameTranslations: nameTranslations,
       minLength: json['minLength'],
       maxLength: json['maxLength'],
+      prefixLengths: prefixLengths,
     );
   }
 }
