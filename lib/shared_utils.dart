@@ -51,6 +51,7 @@ export 'src/ui/formatters/number_formatter.dart';
 export 'src/ui/formatters/card_formatter.dart';
 export 'src/ui/formatters/text_formatter.dart';
 export 'src/ui/formatters/phone_formatter.dart';
+export 'src/ui/formatters/iban_formatter.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Pickers - منتقيات الملفات
