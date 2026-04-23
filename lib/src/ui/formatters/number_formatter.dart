@@ -17,6 +17,24 @@ String convertArabicToEnglishNumbers(String text) {
       .replaceAll(',', '.');
 }
 
+/// منسق يحول الأرقام العربية إلى إنجليزية تلقائياً عند الإدخال
+class ConvertArabicToEnglishNumbersFormatter extends TextInputFormatter {
+  const ConvertArabicToEnglishNumbersFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final converted = convertArabicToEnglishNumbers(newValue.text);
+    if (converted == newValue.text) return newValue;
+    return newValue.copyWith(
+      text: converted,
+      selection: TextSelection.collapsed(offset: newValue.selection.end),
+    );
+  }
+}
+
 /// منسق يسمح بالأرقام فقط (مع دعم اختياري للأرقام العشرية)
 class NumbersOnlyFormatter extends TextInputFormatter {
   final bool allowDecimal;
