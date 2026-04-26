@@ -62,11 +62,13 @@ class DioConsumer implements ApiConsumer {
     Map<String, dynamic>? body,
     bool formDataIsEnabled = false,
     Map<String, dynamic>? queryParameters,
+    Duration? timeout,
   }) async {
     return await client.post(
       path,
       queryParameters: queryParameters,
       data: formDataIsEnabled ? FormData.fromMap(body!) : body,
+      options: Options(sendTimeout: timeout, receiveTimeout: timeout),
     );
   }
 
@@ -76,25 +78,9 @@ class DioConsumer implements ApiConsumer {
     Map<String, dynamic>? body,
     bool formDataIsEnabled = false,
     Map<String, dynamic>? queryParameters,
-    Duration timeout = const Duration(seconds: 30),
+    Duration? timeout,
   }) async {
     return await client.put(
-      path,
-      queryParameters: queryParameters,
-      data: formDataIsEnabled ? FormData.fromMap(body!) : body,
-      options: Options(sendTimeout: timeout, receiveTimeout: timeout),
-    );
-  }
-
-  @override
-  Future<Response<dynamic>> delete(
-    String path, {
-    Map<String, dynamic>? body,
-    Map<String, dynamic>? queryParameters,
-    bool formDataIsEnabled = false,
-    Duration timeout = const Duration(seconds: 30),
-  }) async {
-    return await client.delete(
       path,
       queryParameters: queryParameters,
       data: formDataIsEnabled ? FormData.fromMap(body!) : body,
@@ -108,7 +94,7 @@ class DioConsumer implements ApiConsumer {
     Map<String, dynamic>? body,
     Map<String, dynamic>? queryParameters,
     bool formDataIsEnabled = false,
-    Duration timeout = const Duration(seconds: 30),
+    Duration? timeout,
   }) async {
     return await client.patch(
       path,
@@ -155,6 +141,19 @@ class DioConsumer implements ApiConsumer {
       data: FormData.fromMap(body),
       onSendProgress: onSendProgress,
       options: Options(sendTimeout: timeout, receiveTimeout: timeout),
+    );
+  }
+
+  @override
+  Future<Response<dynamic>> delete(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    return await client.delete(
+      path,
+      queryParameters: queryParameters,
+      data: body,
     );
   }
 }

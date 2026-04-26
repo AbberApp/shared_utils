@@ -12,6 +12,7 @@ abstract class ApiConsumer {
     Map<String, dynamic>? body,
     Map<String, dynamic>? queryParameters,
     bool formDataIsEnabled = false,
+    Duration? timeout,
   });
 
   Future<Response> put(
@@ -19,15 +20,7 @@ abstract class ApiConsumer {
     Map<String, dynamic>? body,
     Map<String, dynamic>? queryParameters,
     bool formDataIsEnabled = false,
-    Duration timeout = const Duration(seconds: 30),
-  });
-
-  Future<Response> delete(
-    String path, {
-    Map<String, dynamic>? body,
-    Map<String, dynamic>? queryParameters,
-    bool formDataIsEnabled = false,
-    Duration timeout = const Duration(seconds: 30),
+    Duration? timeout,
   });
 
   Future<Response> patch(
@@ -35,7 +28,7 @@ abstract class ApiConsumer {
     Map<String, dynamic>? body,
     Map<String, dynamic>? queryParameters,
     bool formDataIsEnabled = false,
-    Duration timeout = const Duration(seconds: 30),
+    Duration? timeout,
   });
 
   Future<Response> download(
@@ -50,5 +43,11 @@ abstract class ApiConsumer {
     Map<String, dynamic>? queryParameters,
     Function(int, int)? onSendProgress,
     Duration timeout = const Duration(minutes: 5),
+  });
+
+  Future<Response> delete(
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, dynamic>? queryParameters,
   });
 }
