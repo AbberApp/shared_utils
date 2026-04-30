@@ -29,14 +29,13 @@ Future<void> launchWhatsApp({
 
   String? encodedText;
   try {
-    
-
-    final data = '''
+    final data =
+        '''
 ${message ?? ''}
 مراسلة الدعم الفني
 رقم المستخدم: ${userId ?? 'مستخدم غير مسجل'}
-النظام: ${deviceInfo.info.system.osName}, ${deviceInfo.info.system.osVersion}, ${deviceInfo.info.system.platform}
-نسخة التطبيق: ${deviceInfo.info.app.fullVersion}
+النظام: ${deviceInfo.infoOrNull?.system.osName}, ${deviceInfo.infoOrNull?.system.osVersion}, ${deviceInfo.infoOrNull?.system.platform}
+نسخة التطبيق: ${deviceInfo.infoOrNull?.app.fullVersion}
 ''';
     encodedText = Uri.encodeComponent(data);
   } catch (_) {}
