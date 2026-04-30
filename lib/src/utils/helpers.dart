@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ua_client_hints/ua_client_hints.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../ui/formatters/number_formatter.dart';
+import '../../shared_utils.dart';
 
 /// إخفاء لوحة المفاتيح
 void dismissKeyboard(BuildContext context) {
@@ -21,6 +20,7 @@ String getFirstName(String fullName) {
 /// فتح واتساب مع رسالة دعم فني
 Future<void> launchWhatsApp({
   required String phoneNumber,
+  required DeviceInfoManager deviceInfo,
   String? userId,
   String? message,
 }) async {
@@ -29,14 +29,14 @@ Future<void> launchWhatsApp({
 
   String? encodedText;
   try {
-    final userAgent = await userAgentClientHintsHeader();
+    
 
     final data = '''
 ${message ?? ''}
 مراسلة الدعم الفني
 رقم المستخدم: ${userId ?? 'مستخدم غير مسجل'}
-النظام: ${userAgent["Sec-CH-UA-Platform"]}, ${userAgent["Sec-CH-UA-Model"]}, ${userAgent["Sec-CH-UA-Arch"]}
-نسخة التطبيق: ${userAgent["Sec-CH-UA-Full-Version"]}
+النظام: ${deviceInfo.info.system.osName}, ${deviceInfo.info.system.osVersion}, ${deviceInfo.info.system.platform}
+نسخة التطبيق: ${deviceInfo.info.app.fullVersion}
 ''';
     encodedText = Uri.encodeComponent(data);
   } catch (_) {}
