@@ -1,3 +1,9 @@
+## 2.8.2
+
+* chore(SocketManager): remove the temporary `query keys: ...` diagnostic log
+  added in 2.8.1 (was only needed to confirm the auth-query work; auth is now
+  header-only).
+
 ## 2.8.1
 
 * chore(SocketManager): log the resolved query-parameter keys (keys only,

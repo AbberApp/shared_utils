@@ -87,11 +87,6 @@ class SocketManager with WidgetsBindingObserver {
                   dynamicQuery.map((k, v) => MapEntry(k, v.toString())),
             );
 
-      // تشخيص: مفاتيح الـquery فقط (لا قيم — لا يُسرّب التوكن). يؤكد وصول
-      // المصادقة عبر الـquery في البناء الفعلي.
-      log('query keys: ${wsUrl.queryParameters.keys.toList()}',
-          name: 'wss: $url');
-
       final channel = IOWebSocketChannel.connect(
         wsUrl,
         headers: headers,
