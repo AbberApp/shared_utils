@@ -1,3 +1,13 @@
+## 2.8.0
+
+* **BREAKING** refactor(SocketManager): drop the static `queryParameters`
+  field — query parameters are now provided exclusively through the
+  `queryBuilder` callback (built fresh on every (re)connect, like
+  `headersBuilder`). Callers that passed static `queryParameters` should
+  move those entries into `queryBuilder`. This keeps the auth token (and
+  any other query) always fresh and avoids a stale snapshot captured at
+  construction time. Aligns with `SseManager`'s `queryParametersBuilder`.
+
 ## 2.7.0
 
 * feat(SocketManager): add optional `queryBuilder` callback — builds fresh

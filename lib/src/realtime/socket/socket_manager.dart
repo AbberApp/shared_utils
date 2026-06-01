@@ -18,13 +18,11 @@ class SocketManager with WidgetsBindingObserver {
   /// دالة تُستدعى عند كل اتصال لتوفير الـ headers — كل مشروع يمرر headers الخاصة به.
   final Map<String, dynamic> Function()? headersBuilder;
 
-  Map<String, dynamic>? queryParameters;
-
   /// دالة تُستدعى عند كل اتصال لبناء query parameters طازجة (نظير headersBuilder).
-  /// تُدمج فوق [queryParameters] الثابتة. الغرض: تمرير توكن المصادقة داخل الـURL
-  /// نفسه — لأن dart:io لا يُرسل الـAuthorization header بثبات عند إعادة الاتصال،
-  /// بينما الـquery جزء من سطر الطلب فيصل دائماً. الباك اند يقبل ?authorization=
-  /// كبديل للـheader، فيصبح هذا حزام أمان يمنع رفض 4001 على إعادة الاتصال.
+  /// الغرض: تمرير توكن المصادقة (وأي query آخر) داخل الـURL نفسه — لأن dart:io
+  /// لا يُرسل الـAuthorization header بثبات عند إعادة الاتصال، بينما الـquery جزء
+  /// من سطر الطلب فيصل دائماً. الباك اند يقبل ?authorization= كبديل للـheader،
+  /// فيصبح هذا حزام أمان يمنع رفض 4001 المتكرر على إعادة الاتصال.
   final Map<String, dynamic> Function()? queryBuilder;
 
   WebSocketChannel? _channel;
@@ -50,7 +48,6 @@ class SocketManager with WidgetsBindingObserver {
 
   SocketManager(
     this.url, {
-    this.queryParameters,
     this.headersBuilder,
     this.queryBuilder,
   });
@@ -81,17 +78,14 @@ class SocketManager with WidgetsBindingObserver {
     try {
       final headers = headersBuilder?.call() ?? {};
 
-      // ابنِ الـquery طازجاً عند كل اتصال: الثابتة + الديناميكية (التوكن).
+      // ابنِ الـquery طازجاً عند كل اتصال (التوكن + أي مُعاملات أخرى).
       final dynamicQuery = queryBuilder?.call();
-      final Map<String, String> mergedQuery = {
-        if (queryParameters != null)
-          ...queryParameters!.map((k, v) => MapEntry(k, v.toString())),
-        if (dynamicQuery != null)
-          ...dynamicQuery.map((k, v) => MapEntry(k, v.toString())),
-      };
-      final wsUrl = mergedQuery.isEmpty
+      final wsUrl = (dynamicQuery == null || dynamicQuery.isEmpty)
           ? Uri.parse(url)
-          : Uri.parse(url).replace(queryParameters: mergedQuery);
+          : Uri.parse(url).replace(
+              queryParameters:
+                  dynamicQuery.map((k, v) => MapEntry(k, v.toString())),
+            );
 
       final channel = IOWebSocketChannel.connect(
         wsUrl,
