@@ -1,3 +1,13 @@
+## 2.7.0
+
+* feat(SocketManager): add optional `queryBuilder` callback — builds fresh
+  query parameters on every (re)connect (mirrors `headersBuilder`). Lets a
+  caller pass the auth token inside the WS URL itself as a reliable fallback
+  to the `Authorization` header, which `dart:io` does not consistently send
+  on reconnect. Eliminates the repeated 4001 reject/reconnect flapping seen
+  on mobile after backgrounding. `headersBuilder` is untouched; the static
+  `queryParameters` still works and is merged under the dynamic builder.
+
 ## 2.6.0
 
 * deps: bump `file_picker` to `^12.0.0-beta.2` to drop the legacy
