@@ -1,3 +1,9 @@
+## 2.8.1
+
+* chore(SocketManager): log the resolved query-parameter keys (keys only,
+  no values — never leaks the token) on each connect, to confirm the auth
+  query is attached in the running build.
+
 ## 2.8.0
 
 * **BREAKING** refactor(SocketManager): drop the static `queryParameters`
