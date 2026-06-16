@@ -13,6 +13,7 @@ class ResponseCode {
   static const int forbidden = 403;
   static const int notFound = 404;
   static const int conflict = 409;
+  static const int tooManyRequests = 429;
 
   // Server error codes (5xx)
   static const int internalServerError = 500;
@@ -38,6 +39,9 @@ class ResponseCode {
 
   /// التحقق من خطأ العميل
   static bool isClientError(int code) => code >= 400 && code < 500;
+
+  /// التحقق من تجاوز حد المعدّل (throttling)
+  static bool isTooManyRequests(int code) => code == tooManyRequests;
 
   /// التحقق من خطأ الخادم
   static bool isServerError(int code) => code >= 500 && code < 600;

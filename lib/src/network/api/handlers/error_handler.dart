@@ -107,6 +107,18 @@ class ErrorHandler implements Exception {
     final responseData = error.response?.data;
     final statusCode = error.response?.statusCode ?? 0;
 
+    // 429 — تجاوز حد المعدّل: رسالة عربية + Retry-After بغضّ النظر عن شكل الجسم.
+    if (statusCode == ResponseCode.tooManyRequests) {
+      final int? retryAfter = _parseRetryAfter(error.response);
+      return Failure(
+        code: ResponseCode.tooManyRequests,
+        message: retryAfter != null
+            ? ResponseMessage.tooManyRequestsAfter(retryAfter)
+            : ResponseMessage.tooManyRequests,
+        retryAfter: retryAfter,
+      );
+    }
+
     if (responseData != null) {
       // // إذا كانت الاستجابة نصاً مباشراً
       // if (responseData is String && responseData.isNotEmpty) {
@@ -163,6 +175,12 @@ class ErrorHandler implements Exception {
       return ErrorType.internalServerError.toFailure();
     }
     return ErrorType.badRequest.toFailure();
+  }
+
+  int? _parseRetryAfter(Response? response) {
+    final String? raw = response?.headers.value('retry-after');
+    if (raw == null) return null;
+    return int.tryParse(raw.trim());
   }
 
   Map<String, dynamic> _parseResponseData(dynamic data) {

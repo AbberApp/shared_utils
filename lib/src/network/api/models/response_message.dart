@@ -13,6 +13,9 @@ class ResponseMessage {
   static const String forbidden = 'لا يمكن تنفيذ الطلب، الحساب غير مُفعّل.';
   static const String notFound = 'عذراً، لم نتمكن من العثور على العنصر المطلوب.';
   static const String conflict = 'لا يمكن إتمام العملية بسبب وجود تعارض.';
+  static const String tooManyRequests = 'عدد المحاولات كثير. يُرجى المحاولة بعد قليل.';
+  static String tooManyRequestsAfter(int seconds) =>
+      'محاولات كثيرة. يُرجى المحاولة بعد $seconds ثانية.';
 
   // Server error messages
   static const String internalServerError = 'حدث خطأ داخلي في الخادم. يُرجى المحاولة لاحقاً.';

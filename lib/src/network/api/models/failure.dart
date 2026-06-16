@@ -4,9 +4,20 @@ class Failure {
   final String? message;
   final List<FieldError> fields;
 
-  const Failure({required this.code, this.message, this.fields = const []});
+  /// عدد الثواني المطلوب الانتظار قبل إعادة المحاولة (من ترويسة Retry-After عند 429)
+  final int? retryAfter;
+
+  const Failure({
+    required this.code,
+    this.message,
+    this.fields = const [],
+    this.retryAfter,
+  });
 
   String get displayMessage => message ?? 'حدث خطأ غير متوقع';
+
+  /// هل الفشل بسبب تجاوز حد المعدّل (throttling 429)؟
+  bool get isTooManyRequests => code == 429;
 
   factory Failure.fromJson(int code, Map<String, dynamic> json) {
     String? error;
