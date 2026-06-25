@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:meta/meta.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 /// مدقق تحديثات التطبيق
@@ -25,7 +26,7 @@ class AppUpdateChecker {
   /// التحقق من توفر تحديث
   Future<void> checkForUpdate({
     required String appStoreId,
-    required void Function() onUpdateAvailable,
+    required void Function(bool isMandatory) onUpdateAvailable,
     void Function(Object error)? onError,
   }) async {
     try {
@@ -40,20 +41,22 @@ class AppUpdateChecker {
     }
   }
 
-  Future<void> _checkAndroidUpdate(void Function() onUpdateAvailable) async {
+  Future<void> _checkAndroidUpdate(void Function(bool isMandatory) onUpdateAvailable) async {
     final updateInfo = await InAppUpdate.checkForUpdate();
 
     if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
-      log('Update available - Android', name: 'AppUpdateChecker');
+      // Android exposes only versionCode (not versionName), so we can't tell a
+      // minor bump from a patch → every available Android update is mandatory.
+      log('Update available - Android (mandatory)', name: 'AppUpdateChecker');
       updateRequired = true;
-      onUpdateAvailable();
+      onUpdateAvailable(true);
     }
   }
 
   /// فحص تحديث iOS مباشرة من iTunes API
   Future<void> checkIOSUpdate(
     String appStoreId,
-    void Function() onUpdateAvailable,
+    void Function(bool isMandatory) onUpdateAvailable,
     void Function(Object error)? onError,
   ) async {
     try {
@@ -143,8 +146,11 @@ class AppUpdateChecker {
       log('Update available: $updateAvailable', name: 'AppUpdateChecker');
 
       if (updateAvailable) {
-        updateRequired = true;
-        onUpdateAvailable();
+        // iOS gives the store versionName → mandatory only when the major or
+        // minor segment changed; a patch-only bump is optional.
+        final bool isMandatory = isMandatoryUpdate(localVersion, storeVersion);
+        updateRequired = isMandatory;
+        onUpdateAvailable(isMandatory);
       }
     } catch (e) {
       onError?.call(e);
@@ -193,6 +199,28 @@ class AppUpdateChecker {
     }
 
     return false;
+  }
+
+  /// تحديد إجباريّة التحديث (iOS): إجباريّ إذا تغيّرت الخانة الكبرى أو الوسطى
+  /// (major/minor)، واختياريّ إذا كان التغيير في الخانة الصغرى (patch) فقط.
+  @visibleForTesting
+  bool isMandatoryUpdate(String local, String store) {
+    final List<int> l = _versionParts(local);
+    final List<int> s = _versionParts(store);
+    if (s[0] != l[0]) return s[0] > l[0]; // major
+    if (s[1] != l[1]) return s[1] > l[1]; // minor
+    return false; // patch only → اختياريّ
+  }
+
+  /// تفكيك الإصدار إلى [major, minor, patch] متجاهلاً لاحقة البناء (+N أو -x).
+  List<int> _versionParts(String version) {
+    final String core = version.trim().split('+').first.split('-').first;
+    final List<String> parts = core.split('.');
+    return [
+      parts.isNotEmpty ? int.tryParse(parts[0]) ?? 0 : 0,
+      parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
+      parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0,
+    ];
   }
 
   /// إيجاد أكبر إصدار من قائمة الإصدارات
