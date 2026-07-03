@@ -20,8 +20,13 @@ class OptionalUpdateBanner {
     required Color foregroundColor,
     required Color actionColor,
     IconData icon = Icons.system_update_alt_rounded,
+    OverlayState? overlayState,
   }) {
-    final OverlayState? overlay = Overlay.maybeOf(context, rootOverlay: true);
+    // Prefer an explicit OverlayState (e.g. navigatorKey.currentState.overlay):
+    // a bare navigatorKey.currentContext has NO Overlay ancestor, so
+    // Overlay.maybeOf(context) returns null and the banner never shows.
+    final OverlayState? overlay =
+        overlayState ?? Overlay.maybeOf(context, rootOverlay: true);
     if (overlay == null || _entry != null) return; // معروض أصلًا → لا تكرار
 
     _entry = OverlayEntry(
