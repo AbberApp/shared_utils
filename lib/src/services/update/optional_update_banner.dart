@@ -21,6 +21,7 @@ class OptionalUpdateBanner {
     required Color actionColor,
     IconData icon = Icons.system_update_alt_rounded,
     OverlayState? overlayState,
+    bool showCloseButton = true,
   }) {
     // Prefer an explicit OverlayState (e.g. navigatorKey.currentState.overlay):
     // a bare navigatorKey.currentContext has NO Overlay ancestor, so
@@ -39,6 +40,7 @@ class OptionalUpdateBanner {
         actionColor: actionColor,
         onAction: onAction,
         onClose: hide,
+        showCloseButton: showCloseButton,
       ),
     );
     overlay.insert(_entry!);
@@ -60,6 +62,7 @@ class _OptionalUpdateBannerView extends StatelessWidget {
     required this.actionColor,
     required this.onAction,
     required this.onClose,
+    required this.showCloseButton,
   });
 
   final String message;
@@ -70,6 +73,7 @@ class _OptionalUpdateBannerView extends StatelessWidget {
   final Color actionColor;
   final VoidCallback onAction;
   final VoidCallback onClose;
+  final bool showCloseButton;
 
   @override
   Widget build(BuildContext context) {
@@ -117,14 +121,15 @@ class _OptionalUpdateBannerView extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.0),
                     ),
                   ),
-                  InkWell(
-                    onTap: onClose,
-                    borderRadius: BorderRadius.circular(20.0),
-                    child: Padding(
-                      padding: const EdgeInsets.all(2.0),
-                      child: Icon(Icons.close_rounded, color: foregroundColor, size: 18.0),
+                  if (showCloseButton)
+                    InkWell(
+                      onTap: onClose,
+                      borderRadius: BorderRadius.circular(20.0),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2.0),
+                        child: Icon(Icons.close_rounded, color: foregroundColor, size: 18.0),
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
