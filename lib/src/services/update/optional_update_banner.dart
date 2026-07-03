@@ -22,6 +22,7 @@ class OptionalUpdateBanner {
     IconData icon = Icons.system_update_alt_rounded,
     OverlayState? overlayState,
     bool showCloseButton = true,
+    bool atTop = false,
   }) {
     // Prefer an explicit OverlayState (e.g. navigatorKey.currentState.overlay):
     // a bare navigatorKey.currentContext has NO Overlay ancestor, so
@@ -41,6 +42,7 @@ class OptionalUpdateBanner {
         onAction: onAction,
         onClose: hide,
         showCloseButton: showCloseButton,
+        atTop: atTop,
       ),
     );
     overlay.insert(_entry!);
@@ -63,6 +65,7 @@ class _OptionalUpdateBannerView extends StatelessWidget {
     required this.onAction,
     required this.onClose,
     required this.showCloseButton,
+    required this.atTop,
   });
 
   final String message;
@@ -74,13 +77,15 @@ class _OptionalUpdateBannerView extends StatelessWidget {
   final VoidCallback onAction;
   final VoidCallback onClose;
   final bool showCloseButton;
+  final bool atTop;
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
       left: 12.0,
       right: 12.0,
-      bottom: 12.0,
+      top: atTop ? 12.0 : null,
+      bottom: atTop ? null : 12.0,
       child: SafeArea(
         child: Directionality(
           textDirection: TextDirection.rtl,
