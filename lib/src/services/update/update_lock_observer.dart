@@ -1,61 +1,52 @@
 import 'package:flutter/widgets.dart';
 
-/// مراقب تنقّل يقفل التطبيق على شاشة معيّنة (عادةً شاشة التحديث الإجباريّ).
+/// يقفل التطبيق على شاشة معيّنة (عادةً شاشة التحديث الإجباريّ) ويمنع الخروج منها
+/// **من جذر التوجيه** — لا استبدال، لا إزالة، لا شاشة سوداء.
 ///
-/// بمجرّد أن تُدفَع الشاشة ذات [lockRouteName] يصبح [locked] = true، ثمّ تُزال
-/// فورًا أيّ شاشة تُدفَع فوقها — فلا يحدث أيّ توجيه بعدها (المخرج الوحيد: إعادة
-/// تشغيل التطبيق، حيث يُصفَّر القفل تلقائيًّا لأنّه ثابت في الذاكرة).
+/// لماذا من الجذر؟ لأنّ `NavigatorObserver` يرصد **بعد** حدوث الدفع (وقد يكون
+/// التنقّل أزال الشاشة المقفولة عبر `pushNamedAndRemoveUntil` فتظهر شاشة سوداء).
+/// أمّا `onGenerateRoute` فيُستدعى **قبل** إنشاء الوجهة — فهو الجذر الصحيح للمنع.
 ///
-/// عامّ وقابل لإعادة الاستخدام: كل مشروع يمرّر اسم مساره الخاصّ، ويُسجّله في
-/// `MaterialApp.navigatorObservers`:
+/// الاستخدام:
 /// ```dart
-/// UpdateLockObserver(lockRouteName: AppRoutes.appUpdateRoute)
+/// MaterialApp(
+///   navigatorObservers: [UpdateLockObserver(lockRouteName: AppRoutes.appUpdateRoute)],
+///   onGenerateRoute: (settings) {
+///     final name = UpdateLockObserver.resolve(settings.name); // ← المنع من الجذر
+///     switch (name) { ... }
+///   },
+/// )
 /// ```
+/// حين يكون مقفلًا، يُحوّل [resolve] أيّ وجهة جديدة إلى الشاشة المقفولة، فتُبنى
+/// شاشة القفل بدل الوجهة الدخيلة — الوجهة الدخيلة **لا تُبنى إطلاقًا**.
 class UpdateLockObserver extends NavigatorObserver {
-  UpdateLockObserver({required this.lockRouteName});
+  UpdateLockObserver({required String lockRouteName}) {
+    _lockRouteName = lockRouteName;
+  }
 
-  /// اسم المسار الذي يُقفَل عليه التطبيق.
-  final String lockRouteName;
-
+  static String? _lockRouteName;
   static bool _locked = false;
 
   /// true بعد الدخول للشاشة المقفولة. يُصفَّر عند إعادة تشغيل التطبيق.
   static bool get locked => _locked;
 
+  /// يُستدعى في أعلى `onGenerateRoute` (جذر التوجيه). أثناء القفل يُعيد اسم
+  /// الشاشة المقفولة بدل أيّ وجهة جديدة — فلا تُبنى الوجهة الدخيلة أصلًا.
+  static String? resolve(String? requestedRouteName) {
+    if (_locked &&
+        _lockRouteName != null &&
+        requestedRouteName != _lockRouteName) {
+      return _lockRouteName;
+    }
+    return requestedRouteName;
+  }
+
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
-    if (route.settings.name == lockRouteName) {
+    // رصد فقط: يُرفَع القفل بمجرّد دخول الشاشة المقفولة. المنع الفعليّ في [resolve].
+    if (route.settings.name == _lockRouteName) {
       _locked = true;
-    } else if (_locked) {
-      if (previousRoute?.settings.name == lockRouteName) {
-        // الدخيل فوق الشاشة المقفولة مباشرةً وهي باقية → أزِل الدخيل فقط
-        // (بلا إعادة توجيه لشاشة مفتوحة أصلًا).
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (route.isActive) navigator?.removeRoute(route);
-        });
-      } else {
-        // الشاشة المقفولة ليست تحت الدخيل (أُزيلت عبر removeUntil مثلًا) →
-        // استعِدها كجذر وحيد لتجنّب الشاشة السوداء.
-        _restore();
-      }
     }
-  }
-
-  @override
-  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
-    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
-    // pushReplacement استبدل الشاشة المقفولة بأخرى → استعِدها.
-    if (_locked &&
-        oldRoute?.settings.name == lockRouteName &&
-        newRoute?.settings.name != lockRouteName) {
-      _restore();
-    }
-  }
-
-  void _restore() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      navigator?.pushNamedAndRemoveUntil(lockRouteName, (r) => false);
-    });
   }
 }
