@@ -28,9 +28,12 @@ class UpdateLockObserver extends NavigatorObserver {
     if (route.settings.name == lockRouteName) {
       _locked = true;
     } else if (_locked) {
-      // شاشة دخيلة فوق الشاشة المقفولة → أزِلها فورًا (بلا إعادة توجيه ولا تكديس).
+      // شاشة دخيلة أثناء القفل. لا نُزيلها فقط (قد يكون الدخيل استبدل/أزال الشاشة
+      // المقفولة عبر pushReplacement/removeUntil فتبقى شاشة سوداء)؛ بل نستعيد
+      // الشاشة المقفولة كجذر وحيد → تُلغى الشاشة الدخيلة والمكدّس معًا. لا خروج،
+      // لا شاشة سوداء، لا تكديس، ولا حلقة (دفع lockRouteName لا يُفعّل هذا الفرع).
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (route.isActive) navigator?.removeRoute(route);
+        navigator?.pushNamedAndRemoveUntil(lockRouteName, (r) => false);
       });
     }
   }
