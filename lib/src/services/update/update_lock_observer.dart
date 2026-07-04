@@ -28,13 +28,34 @@ class UpdateLockObserver extends NavigatorObserver {
     if (route.settings.name == lockRouteName) {
       _locked = true;
     } else if (_locked) {
-      // شاشة دخيلة أثناء القفل. لا نُزيلها فقط (قد يكون الدخيل استبدل/أزال الشاشة
-      // المقفولة عبر pushReplacement/removeUntil فتبقى شاشة سوداء)؛ بل نستعيد
-      // الشاشة المقفولة كجذر وحيد → تُلغى الشاشة الدخيلة والمكدّس معًا. لا خروج،
-      // لا شاشة سوداء، لا تكديس، ولا حلقة (دفع lockRouteName لا يُفعّل هذا الفرع).
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigator?.pushNamedAndRemoveUntil(lockRouteName, (r) => false);
-      });
+      if (previousRoute?.settings.name == lockRouteName) {
+        // الدخيل فوق الشاشة المقفولة مباشرةً وهي باقية → أزِل الدخيل فقط
+        // (بلا إعادة توجيه لشاشة مفتوحة أصلًا).
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (route.isActive) navigator?.removeRoute(route);
+        });
+      } else {
+        // الشاشة المقفولة ليست تحت الدخيل (أُزيلت عبر removeUntil مثلًا) →
+        // استعِدها كجذر وحيد لتجنّب الشاشة السوداء.
+        _restore();
+      }
     }
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    // pushReplacement استبدل الشاشة المقفولة بأخرى → استعِدها.
+    if (_locked &&
+        oldRoute?.settings.name == lockRouteName &&
+        newRoute?.settings.name != lockRouteName) {
+      _restore();
+    }
+  }
+
+  void _restore() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      navigator?.pushNamedAndRemoveUntil(lockRouteName, (r) => false);
+    });
   }
 }
