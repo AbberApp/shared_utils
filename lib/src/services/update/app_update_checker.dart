@@ -13,9 +13,6 @@ class AppUpdateChecker {
 
   static final instance = AppUpdateChecker._();
 
-  /// هل تم العثور على تحديث ويجب منع الانتقال لشاشات أخرى
-  bool updateRequired = false;
-
   final Dio _dio = Dio(
     BaseOptions(
       connectTimeout: const Duration(seconds: 10),
@@ -48,7 +45,6 @@ class AppUpdateChecker {
       // Android exposes only versionCode (not versionName), so we can't tell a
       // minor bump from a patch → every available Android update is mandatory.
       log('Update available - Android (mandatory)', name: 'AppUpdateChecker');
-      updateRequired = true;
       onUpdateAvailable(true);
     }
   }
@@ -149,7 +145,6 @@ class AppUpdateChecker {
         // iOS gives the store versionName → mandatory only when the major or
         // minor segment changed; a patch-only bump is optional.
         final bool isMandatory = isMandatoryUpdate(localVersion, storeVersion);
-        updateRequired = isMandatory;
         onUpdateAvailable(isMandatory);
       }
     } catch (e) {
