@@ -29,6 +29,11 @@ class GuardedNavigator extends Navigator {
     super.onUnknownRoute,
     super.observers,
     super.requestFocus,
+    // مواءمة لما يضبطه WidgetsApp لـNavigator الافتراضيّ (مهمّ عند الحقن اليدويّ):
+    super.reportsRouteUpdateToEngine, // إبلاغ المحرّك بالمسار (الرجوع التنبّئيّ)
+    super.clipBehavior,
+    super.routeTraversalEdgeBehavior,
+    super.restorationScopeId,
   });
 
   static bool _locked = false;
