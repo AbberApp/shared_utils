@@ -85,6 +85,7 @@ export 'src/device/models/device_info_model.dart';
 export 'src/services/cache/file_cache_manager.dart';
 export 'src/services/update/app_update_checker.dart';
 export 'src/services/update/optional_update_banner.dart';
+export 'src/services/update/update_lock_observer.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Utils - الأدوات المساعدة
