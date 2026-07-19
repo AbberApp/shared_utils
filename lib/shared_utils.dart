@@ -42,6 +42,7 @@ export 'src/network/api/handlers/response_handler.dart';
 export 'src/utils/extensions/date_format_extension.dart';
 export 'src/utils/extensions/string_extension.dart';
 export 'src/utils/extensions/currency_extension.dart';
+export 'src/utils/extensions/arabic_digits_extension.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Formatters - المنسقات
