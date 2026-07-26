@@ -19,6 +19,18 @@ class Failure {
   /// هل الفشل بسبب تجاوز حد المعدّل (throttling 429)؟
   bool get isTooManyRequests => code == 429;
 
+  /// هل يحوي الفشل أخطاء حقول (validation) على مستوى الحقول؟
+  bool get hasFields => fields.isNotEmpty;
+
+  /// رسالة خطأ الحقل المطابق لاسمه، أو `null` إن لم يكن له خطأ.
+  /// مثال: `failure.fieldError('phone')`.
+  String? fieldError(String field) {
+    for (final FieldError e in fields) {
+      if (e.field == field) return e.message;
+    }
+    return null;
+  }
+
   factory Failure.fromJson(int code, Map<String, dynamic> json) {
     String? error;
     try {
