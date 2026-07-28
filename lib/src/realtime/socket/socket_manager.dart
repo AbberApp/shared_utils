@@ -207,10 +207,15 @@ class SocketManager with WidgetsBindingObserver {
         _reconnectTimer?.cancel();
 
       case AppLifecycleState.resumed:
-        // التطبيق عاد للمقدمة - استأنف إعادة الاتصال إذا كان منقطعاً
+        // التطبيق عاد للمقدمة - استأنف إعادة الاتصال إذا كان منقطعاً.
+        // نصفّر عدّاد المحاولات أولاً: بدونه، لو استُنفدت الـ10 محاولات أثناء
+        // انقطاع طويل، يبقى العدّاد ممتلئاً فيستسلم _scheduleReconnect نهائياً
+        // ولا يتعافى السوكِت بقية الجلسة (سوكِت الحضور يُوصَل مرّة عند الجذر).
+        // كل عودة للمقدّمة = ميزانية وصل جديدة، فالتعافي مضمون.
         if (!_intentionalClose &&
             _enableReconnect &&
             _state == SocketConnectionState.disconnected) {
+          _reconnectAttempts = 0;
           _scheduleReconnect();
         }
 

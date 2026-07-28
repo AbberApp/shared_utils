@@ -1,3 +1,12 @@
+## 2.8.18
+
+* fix(SocketManager): reset the reconnect-attempt counter on app resume before
+  rescheduling. Without it, once the 10 attempts were exhausted during a long
+  foreground outage the counter stayed full, so `resumed` → `_scheduleReconnect`
+  gave up permanently and the socket never recovered for the rest of the session
+  (presence sockets connect once at a root screen). Now every foreground return
+  gets a fresh reconnect budget — self-healing as intended.
+
 ## 2.8.2
 
 * chore(SocketManager): remove the temporary `query keys: ...` diagnostic log
