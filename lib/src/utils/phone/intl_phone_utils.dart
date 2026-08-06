@@ -1,3 +1,5 @@
+import 'phone_lengths.g.dart';
+
 /// تحسين الأداء والوظائف الخاصة بالبحث عن الدول والأرقام الهاتفية
 class IntlPhoneUtils {
   IntlPhoneUtils._();
@@ -92,10 +94,16 @@ class IntlPhoneUtils {
     return '';
   }
 
-  /// التحقق من صحة رقم الهاتف بالاعتماد على بادئة الرقم الوطني (NSN).
-  /// يقبل الصيغة الكاملة مثل +966XXXXXXXXX أو 966XXXXXXXXX.
-  static PhoneValidationResult validatePhone(String fullPhone) {
-    final String phone = fullPhone.startsWith('+') ? fullPhone.substring(1) : fullPhone;
+  /// يحدّد الدولة من الرقم الكامل (بدون '+').
+  ///
+  /// عند تمرير [preferred] وكان الرقم يبدأ برمز اتصالها تُستخدم مباشرةً — وهذا
+  /// يحسم غموض الأقاليم التي تتشارك رمز الاتصال نفسه (بريطانيا/غيرنزي/جيرسي/
+  /// جزيرة مان على 44، والدول المتعددة على 1، ...). بدونها كان التعادل يُحسم
+  /// بترتيب القائمة فيقع رقم بريطاني على غيرنزي (٦ أرقام) فيُرفض رغم صحّته.
+  static CountryModel? _matchCountry(String phone, {CountryModel? preferred}) {
+    if (preferred != null && phone.startsWith(preferred.dialCode)) {
+      return preferred;
+    }
 
     // البحث عن الدولة بأطول تطابق لرمز الاتصال
     CountryModel? matchedCountry;
@@ -106,6 +114,33 @@ class IntlPhoneUtils {
         }
       }
     }
+    if (matchedCountry == null) return matchedCountry;
+
+    // عند تشارك عدة أقاليم رمزَ الاتصال نفسه (مثل 44) فضّل الدولة الرئيسية
+    // (بريطانيا لا غيرنزي) — libphonenumber هو المرجع.
+    final String? mainIso = kMainRegionForDialCode[matchedCountry.dialCode];
+    if (mainIso != null && mainIso != matchedCountry.code) {
+      for (final country in countries) {
+        if (country.code == mainIso && country.dialCode == matchedCountry.dialCode) {
+          return country;
+        }
+      }
+    }
+    return matchedCountry;
+  }
+
+  /// أطوال الرقم الوطني الممكنة للدولة (مرجع libphonenumber)، أو null.
+  static List<int>? possibleLengthsFor(CountryModel country) => kPhonePossibleLengths[country.code];
+
+  /// التحقق من صحة رقم الهاتف بالاعتماد على بادئة الرقم الوطني (NSN).
+  /// يقبل الصيغة الكاملة مثل +966XXXXXXXXX أو 966XXXXXXXXX.
+  ///
+  /// مرّر [country] (الدولة المختارة في المنتقي) لحسم الأقاليم التي تتشارك رمز
+  /// الاتصال نفسه — وإلا تُشتقّ الدولة من البادئة بأطول تطابق.
+  static PhoneValidationResult validatePhone(String fullPhone, {CountryModel? country}) {
+    final String phone = fullPhone.startsWith('+') ? fullPhone.substring(1) : fullPhone;
+
+    final CountryModel? matchedCountry = _matchCountry(phone, preferred: country);
 
     if (matchedCountry == null) {
       return const PhoneValidationResult(isValid: false, error: 'رمز الدولة غير معروف');
@@ -113,26 +148,18 @@ class IntlPhoneUtils {
 
     final String nsn = phone.substring(matchedCountry.dialCode.length);
 
-    // البحث عن أطول بادئة متطابقة في prefixLengths
-    int expectedLength = -1;
-    int bestPrefixLen = 0;
-    for (final entry in matchedCountry.prefixLengths.entries) {
-      if (nsn.startsWith(entry.key) && entry.key.length > bestPrefixLen) {
-        expectedLength = entry.value;
-        bestPrefixLen = entry.key.length;
-      }
-    }
-
-    if (expectedLength != -1) {
-      final bool isValid = nsn.length == expectedLength;
+    // التحقق بمجموعة الأطوال الممكنة من libphonenumber (يشمل الأطوال غير المتصلة
+    // مثل [8, 10]). عند غياب البيانات (أقاليم غير مأهولة) يُستخدم نطاق الدولة.
+    final List<int>? lengths = kPhonePossibleLengths[matchedCountry.code];
+    if (lengths != null && lengths.isNotEmpty) {
+      final bool isValid = lengths.contains(nsn.length);
       return PhoneValidationResult(
         isValid: isValid,
         country: matchedCountry,
-        error: isValid ? null : 'الطول المتوقع $expectedLength أرقام',
+        error: isValid ? null : 'الطول المتوقع ${_lengthsLabel(lengths)} أرقام',
       );
     }
 
-    // الاحتياطي: التحقق بنطاق الدولة
     final bool isValid = nsn.length >= matchedCountry.minLength && nsn.length <= matchedCountry.maxLength;
     return PhoneValidationResult(
       isValid: isValid,
@@ -141,28 +168,20 @@ class IntlPhoneUtils {
     );
   }
 
-  /// الحصول على الطول الدقيق للرقم بناءً على بادئته (أو null إذا لم تُعرَّف بادئة)
-  static int? getExactLength(String fullPhone) {
+  /// صياغة الأطوال المتوقعة لرسالة الخطأ: [10]→«10»، [8,10]→«8 أو 10».
+  static String _lengthsLabel(List<int> lengths) {
+    if (lengths.length == 1) return '${lengths.first}';
+    return lengths.join(' أو ');
+  }
+
+  /// أقصى طول ممكن للرقم الوطني — لتحديد سعة حقل الإدخال (يسمح بكل الأطوال الصالحة).
+  static int? getExactLength(String fullPhone, {CountryModel? country}) {
     final String phone = fullPhone.startsWith('+') ? fullPhone.substring(1) : fullPhone;
-    CountryModel? matchedCountry;
-    for (final country in countries) {
-      if (phone.startsWith(country.dialCode)) {
-        if (matchedCountry == null || country.dialCode.length > matchedCountry.dialCode.length) {
-          matchedCountry = country;
-        }
-      }
-    }
+    final CountryModel? matchedCountry = _matchCountry(phone, preferred: country);
     if (matchedCountry == null) return null;
-    final String nsn = phone.substring(matchedCountry.dialCode.length);
-    int bestPrefixLen = 0;
-    int? length;
-    for (final entry in matchedCountry.prefixLengths.entries) {
-      if (nsn.startsWith(entry.key) && entry.key.length > bestPrefixLen) {
-        length = entry.value;
-        bestPrefixLen = entry.key.length;
-      }
-    }
-    return length;
+    final List<int>? lengths = kPhonePossibleLengths[matchedCountry.code];
+    if (lengths == null || lengths.isEmpty) return null;
+    return lengths.reduce((a, b) => a > b ? a : b);
   }
 
   /// التحقق مما إذا كانت السلسلة عبارة عن رقم
@@ -760,38 +779,6 @@ class IntlPhoneUtils {
       'dialCode': '1242',
       'minLength': 7,
       'maxLength': 7,
-    },
-    {
-      'name': 'Bahrain',
-      'nameTranslations': {
-        'sk': 'Bahrajn',
-        'se': 'Bahrain',
-        'pl': 'Bahrajn',
-        'no': 'Bahrain',
-        'ja': 'バーレーン',
-        'it': 'Bahrein',
-        'zh': '巴林',
-        'nl': 'Bahrein',
-        'de': 'Bahrain',
-        'fr': 'Bahreïn',
-        'es': 'Baréin',
-        'en': 'Bahrain',
-        'pt_BR': 'Bahrain',
-        'sr-Cyrl': 'Бахреин',
-        'sr-Latn': 'Bahrein',
-        'zh_TW': '巴林',
-        'tr': 'Bahreyn',
-        'ro': 'Bahrein',
-        'ar': 'البحرين',
-        'fa': 'بحرین',
-        'yue': '巴林',
-      },
-      'flag': '🇧🇭',
-      'code': 'BH',
-      'dialCode': '973',
-      'minLength': 8,
-      'maxLength': 8,
-      'prefixLengths': {'3': 8, '6': 8},
     },
     {
       'name': 'Bahrain',
@@ -1536,7 +1523,7 @@ class IntlPhoneUtils {
       },
       'flag': '🇰🇾',
       'code': 'KY',
-      'dialCode': '345',
+      'dialCode': '1345',
       'minLength': 7,
       'maxLength': 7,
     },
@@ -3251,7 +3238,7 @@ class IntlPhoneUtils {
       },
       'flag': '🇻🇦',
       'code': 'VA',
-      'dialCode': '379',
+      'dialCode': '39',
       'minLength': 10,
       'maxLength': 10,
     },
@@ -3644,9 +3631,9 @@ class IntlPhoneUtils {
       },
       'flag': '🇮🇹',
       'code': 'IT',
-      'dialCode': '41',
-      'minLength': 13,
-      'maxLength': 13,
+      'dialCode': '39',
+      'minLength': 9,
+      'maxLength': 10,
     },
     {
       'name': 'Jamaica',
@@ -5767,7 +5754,7 @@ class IntlPhoneUtils {
       },
       'flag': '🇵🇷',
       'code': 'PR',
-      'dialCode': '1939',
+      'dialCode': '1',
       'minLength': 10,
       'maxLength': 10,
     },
