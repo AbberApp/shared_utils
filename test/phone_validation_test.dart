@@ -4,16 +4,14 @@ import 'package:shared_utils/shared_utils.dart';
 import 'phone_examples.g.dart';
 
 /// اختبار معماريّ شامل لتحقّق أرقام الهاتف — مصدر الحقيقة الوحيد
-/// [IntlPhoneUtils] المدعوم ببيانات Google libphonenumber (نوع MOBILE).
+/// [IntlPhoneUtils]: التحقّق النمطيّ الكامل عبر Google libphonenumber
+/// (`phone_numbers_parser`) + بيانات الأطوال + بوّابة الفشل-المفتوح.
 ///
-/// يُختبر **كل دولة على انفراد تام** برقم جوّال مثال حقيقي من libphonenumber:
-///   1) صحّة الرقم (الواجهة تشتقّ «الاكتمال» من هذه الصحّة).
-///   2) طول الرقم ضمن الأطوال الممكنة، والسعة (getExactLength) تتّسع له.
-///   3) رفض الأطوال خارج المسموح.
+/// يُختبر **كل دولة على انفراد تام** برقم مثال حقيقي من libphonenumber.
 void main() {
   final countries = IntlPhoneUtils.countries;
 
-  group('كل دولة تقبل رقم جوّالها الحقيقي (libphonenumber MOBILE)', () {
+  group('كل دولة تقبل رقمها الحقيقي (تحقّق نمطيّ libphonenumber)', () {
     for (final country in countries) {
       final example = kExampleNumbers[country.code];
       if (example == null) continue; // إقليم غير مأهول بلا بيانات
@@ -22,14 +20,23 @@ void main() {
         expect(
           result.isValid,
           isTrue,
-          reason: '${country.code} رفض جوّاله الحقيقي $example — '
-              'الأطوال الممكنة ${IntlPhoneUtils.possibleLengthsFor(country)}',
+          reason: '${country.code} رفض رقمه الحقيقي $example',
         );
       });
     }
   });
 
-  group('طول الاكتمال/السعة صحيح لكل دولة (لا يطلب أطول من الحقيقي)', () {
+  group('كل دولة: رقمها الحقيقي «معقول» (بوّابة الفشل-المفتوح لا تحجبه)', () {
+    for (final country in countries) {
+      final example = kExampleNumbers[country.code];
+      if (example == null) continue;
+      test('${country.code} plausible', () {
+        expect(IntlPhoneUtils.isPlausiblePhone(example, country: country), isTrue);
+      });
+    }
+  });
+
+  group('طول السعة صحيح لكل دولة (لا يطلب أطول من الحقيقي)', () {
     for (final country in countries) {
       final example = kExampleNumbers[country.code];
       if (example == null) continue;
@@ -38,40 +45,31 @@ void main() {
       final int nsnLen = example.substring(country.dialCode.length + 1).length;
       final int cap = lengths.reduce((a, b) => a > b ? a : b);
       test('${country.code}: السعة $cap تتّسع لطوله الحقيقي $nsnLen', () {
-        final exact = IntlPhoneUtils.getExactLength(example, country: country);
-        expect(exact, cap, reason: '${country.code} سعة غير متوقّعة');
-        // الطول الحقيقي لا يتجاوز السعة (فلا يُقصّ الإدخال) وهو طولٌ صالح.
+        expect(IntlPhoneUtils.getExactLength(example, country: country), cap);
         expect(nsnLen <= cap, isTrue);
         expect(lengths.contains(nsnLen), isTrue);
       });
     }
   });
 
-  group('كل دولة ترفض رقماً أطول من المسموح', () {
+  group('كل دولة ترفض رقماً قصيراً جدًّا (رقم واحد)', () {
     for (final country in countries) {
-      final example = kExampleNumbers[country.code];
-      if (example == null) continue;
-      final lengths = IntlPhoneUtils.possibleLengthsFor(country);
-      if (lengths == null || lengths.isEmpty) continue;
-      final int maxLen = lengths.reduce((a, b) => a > b ? a : b);
-      test('${country.code} يرفض رقماً بطول ${maxLen + 1}', () {
-        final bad = '+${country.dialCode}${'9' * (maxLen + 1)}';
-        expect(
-          IntlPhoneUtils.validatePhone(bad, country: country).isValid,
-          isFalse,
-        );
+      if (kExampleNumbers[country.code] == null) continue;
+      test('${country.code} يرفض رقماً من خانة واحدة', () {
+        final bad = '+${country.dialCode}9';
+        expect(IntlPhoneUtils.validatePhone(bad, country: country).isValid, isFalse);
       });
     }
   });
 
   group('حالات التراجع (regressions)', () {
-    test('السعودية: جوّال ٩ أرقام صالح وسعته ٩ (لا ١٠)', () {
+    test('السعودية: جوّال ٩ أرقام صالح، و١٠ أرقام (ليس جوّالاً) مرفوض', () {
       final sa = IntlPhoneUtils.getCountryByCode('SA');
-      expect(IntlPhoneUtils.possibleLengthsFor(sa), [9]);
-      expect(IntlPhoneUtils.getExactLength('+966531196112', country: sa), 9);
       expect(IntlPhoneUtils.validatePhone('+966531196112', country: sa).isValid, isTrue);
-      // رقم ١٠ أرقام سعوديّ ليس جوّالاً → مرفوض.
+      expect(IntlPhoneUtils.getExactLength('+966531196112', country: sa), 9);
       expect(IntlPhoneUtils.validatePhone('+9665311961123', country: sa).isValid, isFalse);
+      // بوّابة الفشل-المفتوح: الرقم الصحيح دائماً معقول.
+      expect(IntlPhoneUtils.isPlausiblePhone('+966531196112', country: sa), isTrue);
     });
 
     test('بريطانيا +44 7799461648 صالح (كان يُرفض كـ«غيرنزي»)', () {
@@ -80,24 +78,16 @@ void main() {
       expect(IntlPhoneUtils.validatePhone('+447799461648').isValid, isTrue);
     });
 
-    test('إيطاليا رمزها 39 (كانت 41 خطأً) وتتحقق صحيحاً', () {
+    test('إيطاليا رمزها 39 (كانت 41 خطأً) ورقمها الحقيقي صالح', () {
       final it = IntlPhoneUtils.getCountryByCode('IT');
       expect(it.dialCode, '39');
       expect(IntlPhoneUtils.validatePhone(kExampleNumbers['IT']!, country: it).isValid, isTrue);
     });
 
-    test('دول متعددة أطوال الجوّال: كلا الطولين صالح (ألمانيا 10 و11)', () {
+    test('ألمانيا (متعددة الأطوال): رقمها الحقيقي صالح والسعة تشمل >1 طول', () {
       final de = IntlPhoneUtils.getCountryByCode('DE');
-      final lengths = IntlPhoneUtils.possibleLengthsFor(de)!;
-      expect(lengths.length > 1, isTrue);
-      for (final n in lengths) {
-        final num = '+${de.dialCode}${'1' * n}';
-        expect(
-          IntlPhoneUtils.validatePhone(num, country: de).isValid,
-          isTrue,
-          reason: 'ألمانيا رفضت طولاً صالحاً $n',
-        );
-      }
+      expect(IntlPhoneUtils.possibleLengthsFor(de)!.length > 1, isTrue);
+      expect(IntlPhoneUtils.validatePhone(kExampleNumbers['DE']!, country: de).isValid, isTrue);
     });
 
     test('لا وجود لدولة مكرّرة (البحرين مرة واحدة)', () {

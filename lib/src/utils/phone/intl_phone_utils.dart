@@ -1,3 +1,5 @@
+import 'package:phone_numbers_parser/phone_numbers_parser.dart' as pnp;
+
 import 'phone_lengths.g.dart';
 
 /// تحسين الأداء والوظائف الخاصة بالبحث عن الدول والأرقام الهاتفية
@@ -132,11 +134,13 @@ class IntlPhoneUtils {
   /// أطوال الرقم الوطني الممكنة للدولة (مرجع libphonenumber)، أو null.
   static List<int>? possibleLengthsFor(CountryModel country) => kPhonePossibleLengths[country.code];
 
-  /// التحقق من صحة رقم الهاتف بالاعتماد على بادئة الرقم الوطني (NSN).
-  /// يقبل الصيغة الكاملة مثل +966XXXXXXXXX أو 966XXXXXXXXX.
+  /// التحقّق النمطيّ الكامل لصحّة رقم الهاتف (المرجع: Google libphonenumber عبر
+  /// `phone_numbers_parser` — أنماط الأرقام لكل دولة، لا مجرّد الطول).
   ///
   /// مرّر [country] (الدولة المختارة في المنتقي) لحسم الأقاليم التي تتشارك رمز
-  /// الاتصال نفسه — وإلا تُشتقّ الدولة من البادئة بأطول تطابق.
+  /// الاتصال نفسه — وإلا تُشتقّ الدولة من البادئة بأطول تطابق. يقبل الصيغة الكاملة
+  /// `+966XXXXXXXXX` أو `966XXXXXXXXX`. يسقط إلى فحص الطول عند تعذّر التحليل
+  /// (أقاليم بلا بيانات libphonenumber).
   static PhoneValidationResult validatePhone(String fullPhone, {CountryModel? country}) {
     final String phone = fullPhone.startsWith('+') ? fullPhone.substring(1) : fullPhone;
 
@@ -148,8 +152,19 @@ class IntlPhoneUtils {
 
     final String nsn = phone.substring(matchedCountry.dialCode.length);
 
-    // التحقق بمجموعة الأطوال الممكنة من libphonenumber (يشمل الأطوال غير المتصلة
-    // مثل [8, 10]). عند غياب البيانات (أقاليم غير مأهولة) يُستخدم نطاق الدولة.
+    // (ب) تحقّق نمطيّ كامل عبر libphonenumber — نمرّر الرقم الدولي الكامل
+    // (`+dialCode+nsn`) فتحلّله المكتبة وتحسم الدولة والصحّة بنفسها؛ هذا يعالج
+    // أقاليم NANP التي يطوي نموذجنا رمز منطقتها داخل dialCode (مثل JM='1876').
+    final bool? patternValid = _patternValid(phone);
+    if (patternValid != null) {
+      return PhoneValidationResult(
+        isValid: patternValid,
+        country: matchedCountry,
+        error: patternValid ? null : 'رقم الهاتف غير صالح',
+      );
+    }
+
+    // احتياطي (بلا بيانات نمطية): مجموعة الأطوال الممكنة، ثم نطاق الدولة.
     final List<int>? lengths = kPhonePossibleLengths[matchedCountry.code];
     if (lengths != null && lengths.isNotEmpty) {
       final bool isValid = lengths.contains(nsn.length);
@@ -166,6 +181,33 @@ class IntlPhoneUtils {
       country: matchedCountry,
       error: isValid ? null : 'الطول المتوقع ${matchedCountry.minLength}–${matchedCountry.maxLength} أرقام',
     );
+  }
+
+  /// (أ) فحص «المعقولية» المتساهل — الطول ضمن الأطوال الممكنة فقط. يُستخدم كبوّابة
+  /// فشل-مفتوح في الواجهة: لا يمنع إرسال رقمٍ ممكن الطول أبدًا (فالحَكَم النهائي هو
+  /// نجاح إرسال OTP من الباك-إند)، ويمنع فقط الأطوال المستحيلة. **رقمٌ صحيح دائمًا
+  /// معقول الطول → لا يُحجب مستخدمٌ صحيح إطلاقًا.**
+  static bool isPlausiblePhone(String fullPhone, {CountryModel? country}) {
+    final String phone = fullPhone.startsWith('+') ? fullPhone.substring(1) : fullPhone;
+    final CountryModel? matchedCountry = _matchCountry(phone, preferred: country);
+    if (matchedCountry == null) return false;
+    final String nsn = phone.substring(matchedCountry.dialCode.length);
+    final List<int>? lengths = kPhonePossibleLengths[matchedCountry.code];
+    if (lengths != null && lengths.isNotEmpty) return lengths.contains(nsn.length);
+    return nsn.length >= matchedCountry.minLength && nsn.length <= matchedCountry.maxLength;
+  }
+
+  /// تحقّق نمطيّ عبر libphonenumber من الرقم الدولي الكامل ([fullDigits] بلا '+')،
+  /// أو null إن تعذّر التحليل (رمز دولة غير معروف/تنسيق خاطئ) فيُستخدم فحص الطول.
+  static bool? _patternValid(String fullDigits) {
+    try {
+      final pnp.PhoneNumber parsed = pnp.PhoneNumber.parse('+$fullDigits');
+      return parsed.isValid();
+    } on Exception {
+      return null;
+    } on Error {
+      return null;
+    }
   }
 
   /// صياغة الأطوال المتوقعة لرسالة الخطأ: [10]→«10»، [8,10]→«8 أو 10».
