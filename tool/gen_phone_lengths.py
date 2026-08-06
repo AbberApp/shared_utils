@@ -37,14 +37,17 @@ def app_countries():
 
 
 def lib_lengths(region):
+    """أطوال الرقم الوطني الممكنة لحقل **جوّال** — نعتمد نوع MOBILE حصراً
+    (فحقل الدخول جوّال)، ونعود إلى general_desc فقط إن غابت بيانات الجوّال.
+    استخدام general/fixed كان يُدخل أطوالاً لا تخصّ الجوّال (مثل SA=10) فيكسر
+    اكتشاف اكتمال الرقم."""
     meta = PhoneMetadata.metadata_for_region(region)
     if not meta:
         return []
-    s = set()
-    for desc in (meta.general_desc, meta.mobile, meta.fixed_line):
-        if desc and desc.possible_length:
-            s.update(desc.possible_length)
-    return sorted(x for x in s if x > 0)
+    desc = meta.mobile if (meta.mobile and meta.mobile.possible_length) else meta.general_desc
+    if not desc or not desc.possible_length:
+        return []
+    return sorted(x for x in desc.possible_length if x > 0)
 
 
 def main():
