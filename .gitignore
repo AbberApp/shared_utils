@@ -29,3 +29,13 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 /build/
 /coverage/
+
+# Local build output (never commit)
+ios/build/
+ios/Pods/
+ios/.symlinks/
+macos/Pods/
+android/.gradle/
+*.ipa
+*.apk
+*.aab
