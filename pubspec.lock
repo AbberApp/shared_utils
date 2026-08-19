@@ -580,10 +580,10 @@ packages:
     dependency: "direct main"
     description:
       name: persistent_device_id
-      sha256: b9f95798a551a85d0781d24f2acbb9e443e3802c6a49c59f725ec4d4537ac8ac
+      sha256: b037f693d641ceba3a6a62cf29e409ae8b26c423c94642a121380cebad515c3b
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "2.0.0"
   petitparser:
     dependency: transitive
     description:
