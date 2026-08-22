@@ -7,6 +7,8 @@ import 'package:in_app_update/in_app_update.dart';
 import 'package:meta/meta.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import 'app_release_info.dart';
+
 /// مدقق تحديثات التطبيق
 class AppUpdateChecker {
   AppUpdateChecker._();
@@ -25,12 +27,26 @@ class AppUpdateChecker {
     required String appStoreId,
     required void Function(bool isMandatory) onUpdateAvailable,
     void Function(Object error)? onError,
+    /// تفاصيل الإصدار (رقمه وملاحظاته وتاريخه) — تُستدعى قبل [onUpdateAvailable]
+    /// حين تتوفّر. تُقرأ من iTunes، وتصل على أندرويد أيضاً (نصّ «ما الجديد»
+    /// واحد في المتجرين عملياً، وPlay لا يوفّره بلا مصادقة).
+    void Function(AppReleaseInfo info)? onReleaseInfo,
   }) async {
     try {
       if (Platform.isAndroid) {
         await _checkAndroidUpdate(onUpdateAvailable);
+        // أندرويد لا يمنحنا الملاحظات؛ نجلبها من آبل لعرضها كما هي.
+        if (onReleaseInfo != null) {
+          await fetchReleaseInfo(appStoreId)
+              .then((AppReleaseInfo? info) {
+                if (info != null) onReleaseInfo(info);
+              })
+              // ميزة عرضٍ فقط: تفشل بصمت ولا تمنع تدفّق التحديث.
+              .catchError((Object _) {});
+        }
       } else if (Platform.isIOS) {
-        await checkIOSUpdate(appStoreId, onUpdateAvailable, onError);
+        await checkIOSUpdate(appStoreId, onUpdateAvailable, onError,
+            onReleaseInfo: onReleaseInfo);
       }
     } catch (e) {
       log('Error checking for update: $e', name: 'AppUpdateChecker', error: e);
@@ -53,8 +69,9 @@ class AppUpdateChecker {
   Future<void> checkIOSUpdate(
     String appStoreId,
     void Function(bool isMandatory) onUpdateAvailable,
-    void Function(Object error)? onError,
-  ) async {
+    void Function(Object error)? onError, {
+    void Function(AppReleaseInfo info)? onReleaseInfo,
+  }) async {
     try {
       log('Checking for update - iOS', name: 'AppUpdateChecker');
       log('App Store ID: $appStoreId', name: 'AppUpdateChecker');
@@ -145,10 +162,72 @@ class AppUpdateChecker {
         // iOS gives the store versionName → mandatory only when the major or
         // minor segment changed; a patch-only bump is optional.
         final bool isMandatory = isMandatoryUpdate(localVersion, storeVersion);
+
+        // التفاصيل أوّلاً: الواجهة تعرضها في نفس نافذة التحديث، فلا يجوز أن
+        // تُفتح النافذة ثم تُملأ الملاحظات بعدها.
+        if (onReleaseInfo != null) {
+          final Map<String, dynamic>? match = results
+              .whereType<Map<String, dynamic>>()
+              .cast<Map<String, dynamic>?>()
+              .firstWhere(
+                (Map<String, dynamic>? r) => r?['version'] == storeVersion,
+                orElse: () => results.first as Map<String, dynamic>,
+              );
+          if (match != null) {
+            onReleaseInfo(
+              AppReleaseInfo.fromItunes(match, isMandatory: isMandatory),
+            );
+          }
+        }
+
         onUpdateAvailable(isMandatory);
       }
     } catch (e) {
       onError?.call(e);
+    }
+  }
+
+  /// يجلب تفاصيل الإصدار المنشور في المتجر (رقمه، ملاحظاته، تاريخه، رابطه)
+  /// بلا مقارنة ولا شرط تحديث — يصلح لعرض «ما الجديد» في أي موضع.
+  ///
+  /// المصدر iTunes Lookup: طلبة `GET` واحدة بلا مصادقة. Google Play لا يوفّر
+  /// مقابلاً عامّاً (يلزمه Play Developer API بحساب خدمة، أو كشط الصفحة).
+  Future<AppReleaseInfo?> fetchReleaseInfo(String appStoreId) async {
+    try {
+      final response = await _dio.get(
+        'https://itunes.apple.com/lookup',
+        queryParameters: <String, dynamic>{
+          'id': appStoreId,
+          't': DateTime.now().millisecondsSinceEpoch,
+        },
+        options: Options(
+          headers: const <String, String>{
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        ),
+      );
+      if (response.statusCode != 200) return null;
+
+      final Map<String, dynamic> data = response.data is String
+          ? json.decode(response.data as String) as Map<String, dynamic>
+          : response.data as Map<String, dynamic>;
+      final List<dynamic>? results = data['results'] as List<dynamic>?;
+      if (results == null || results.isEmpty) return null;
+
+      final Map<String, dynamic> first = results.first as Map<String, dynamic>;
+      final String storeVersion = (first['version'] as String?) ?? '';
+      final String localVersion = (await PackageInfo.fromPlatform()).version;
+
+      return AppReleaseInfo.fromItunes(
+        first,
+        isMandatory: storeVersion.isEmpty
+            ? false
+            : isMandatoryUpdate(localVersion, storeVersion),
+      );
+    } catch (e) {
+      log('fetchReleaseInfo failed: $e', name: 'AppUpdateChecker', error: e);
+      return null;
     }
   }
 
