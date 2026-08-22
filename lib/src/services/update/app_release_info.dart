@@ -33,15 +33,34 @@ class AppReleaseInfo {
   /// هل توجد ملاحظات صالحة للعرض؟ الحاوية تُخفى إن لم توجد بدل أن تظهر فارغة.
   bool get hasNotes => releaseNotes.trim().isNotEmpty;
 
-  /// الملاحظات مقسّمة أسطراً، بعد إزالة الفراغات والرموز البادئة (`•`, `-`, `*`)
-  /// كي يعرضها التطبيق بنقاطه الخاصّة بدل رموز الناشر المختلطة.
+  /// أقصى عدد نقاط تُعرض — البطاقة في التصميم موجزة، وقائمةٌ طويلة تكسر
+  /// تناسبها وتدفع زرّ التحديث خارج الشاشة.
+  static const int maxNotes = 6;
+
+  static final RegExp _bulletGlyph = RegExp(r'^\s*[•\-\*·▪]\s*');
+
+  /// الملاحظات كنقاط جاهزة للعرض.
+  ///
+  /// نصّ «ما الجديد» في المتاجر ليس نقاطاً خالصة: يبدأ عادةً بعنوانٍ ترويجي
+  /// («عبر بحُلّة جديدة») وينتهي بدعوةٍ للتحديث — وكلاهما ليس ميزة. فنأخذ
+  /// **الأسطر المعلَّمة برمز نقطة فقط** حين توجد، وهي ما قصده الناشر نقاطاً.
+  /// وإن خلا النصّ من الرموز رجعنا لكل الأسطر غير الفارغة.
   List<String> get noteLines {
     if (!hasNotes) return const <String>[];
-    return releaseNotes
+    final List<String> raw = releaseNotes
         .split(RegExp(r'[\r\n]+'))
-        .map((String line) => line.replaceFirst(RegExp(r'^\s*[•\-\*•]\s*'), '').trim())
+        .map((String line) => line.trim())
         .where((String line) => line.isNotEmpty)
         .toList();
+
+    final List<String> marked = raw
+        .where((String line) => _bulletGlyph.hasMatch(line))
+        .map((String line) => line.replaceFirst(_bulletGlyph, '').trim())
+        .where((String line) => line.isNotEmpty)
+        .toList();
+
+    final List<String> chosen = marked.isNotEmpty ? marked : raw;
+    return chosen.take(maxNotes).toList();
   }
 
   factory AppReleaseInfo.fromItunes(
