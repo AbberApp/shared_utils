@@ -25,28 +25,20 @@ class AppUpdateChecker {
   /// التحقق من توفر تحديث
   Future<void> checkForUpdate({
     required String appStoreId,
-    required void Function(bool isMandatory) onUpdateAvailable,
+    /// يُستدعى عند توفّر تحديث. الوسيط الثاني يحمل تفاصيل الإصدار (رقمه
+    /// وملاحظاته وتاريخه) حين تتوفّر من المتجر، و`null` إن تعذّر جلبها.
+    ///
+    /// الوسيط اختياريّ عمداً: أربعة تطبيقات تستهلك هذه الدالة بدالّة من وسيط
+    /// واحد، ودارت تقبل تمرير دالّة أقلّ وسائط — فلا يكسرها هذا التوسيع.
+    required void Function(bool isMandatory, [AppReleaseInfo? info])
+        onUpdateAvailable,
     void Function(Object error)? onError,
-    /// تفاصيل الإصدار (رقمه وملاحظاته وتاريخه) — تُستدعى قبل [onUpdateAvailable]
-    /// حين تتوفّر. تُقرأ من iTunes، وتصل على أندرويد أيضاً (نصّ «ما الجديد»
-    /// واحد في المتجرين عملياً، وPlay لا يوفّره بلا مصادقة).
-    void Function(AppReleaseInfo info)? onReleaseInfo,
   }) async {
     try {
       if (Platform.isAndroid) {
-        await _checkAndroidUpdate(onUpdateAvailable);
-        // أندرويد لا يمنحنا الملاحظات؛ نجلبها من آبل لعرضها كما هي.
-        if (onReleaseInfo != null) {
-          await fetchReleaseInfo(appStoreId)
-              .then((AppReleaseInfo? info) {
-                if (info != null) onReleaseInfo(info);
-              })
-              // ميزة عرضٍ فقط: تفشل بصمت ولا تمنع تدفّق التحديث.
-              .catchError((Object _) {});
-        }
+        await _checkAndroidUpdate(appStoreId, onUpdateAvailable);
       } else if (Platform.isIOS) {
-        await checkIOSUpdate(appStoreId, onUpdateAvailable, onError,
-            onReleaseInfo: onReleaseInfo);
+        await checkIOSUpdate(appStoreId, onUpdateAvailable, onError);
       }
     } catch (e) {
       log('Error checking for update: $e', name: 'AppUpdateChecker', error: e);
@@ -54,24 +46,34 @@ class AppUpdateChecker {
     }
   }
 
-  Future<void> _checkAndroidUpdate(void Function(bool isMandatory) onUpdateAvailable) async {
+  Future<void> _checkAndroidUpdate(
+    String appStoreId,
+    void Function(bool isMandatory, [AppReleaseInfo? info]) onUpdateAvailable,
+  ) async {
     final updateInfo = await InAppUpdate.checkForUpdate();
 
     if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
       // Android exposes only versionCode (not versionName), so we can't tell a
       // minor bump from a patch → every available Android update is mandatory.
       log('Update available - Android (mandatory)', name: 'AppUpdateChecker');
-      onUpdateAvailable(true);
+      // Play لا يوفّر ملاحظات الإصدار بلا مصادقة، فنقرأها من آبل — النصّ نفسه
+      // في المتجرين عملياً. عرضٌ فقط: يفشل بصمت ولا يعطّل التحديث.
+      AppReleaseInfo? info;
+      try {
+        info = await fetchReleaseInfo(appStoreId);
+      } catch (_) {
+        info = null;
+      }
+      onUpdateAvailable(true, info);
     }
   }
 
   /// فحص تحديث iOS مباشرة من iTunes API
   Future<void> checkIOSUpdate(
     String appStoreId,
-    void Function(bool isMandatory) onUpdateAvailable,
-    void Function(Object error)? onError, {
-    void Function(AppReleaseInfo info)? onReleaseInfo,
-  }) async {
+    void Function(bool isMandatory, [AppReleaseInfo? info]) onUpdateAvailable,
+    void Function(Object error)? onError,
+  ) async {
     try {
       log('Checking for update - iOS', name: 'AppUpdateChecker');
       log('App Store ID: $appStoreId', name: 'AppUpdateChecker');
@@ -163,24 +165,22 @@ class AppUpdateChecker {
         // minor segment changed; a patch-only bump is optional.
         final bool isMandatory = isMandatoryUpdate(localVersion, storeVersion);
 
-        // التفاصيل أوّلاً: الواجهة تعرضها في نفس نافذة التحديث، فلا يجوز أن
-        // تُفتح النافذة ثم تُملأ الملاحظات بعدها.
-        if (onReleaseInfo != null) {
-          final Map<String, dynamic>? match = results
-              .whereType<Map<String, dynamic>>()
-              .cast<Map<String, dynamic>?>()
-              .firstWhere(
-                (Map<String, dynamic>? r) => r?['version'] == storeVersion,
-                orElse: () => results.first as Map<String, dynamic>,
-              );
-          if (match != null) {
-            onReleaseInfo(
-              AppReleaseInfo.fromItunes(match, isMandatory: isMandatory),
+        // التفاصيل تصل مع نفس النداء — نفس الاستجابة التي قارنّا بها الإصدار
+        // تحمل `releaseNotes`، فلا طلبة ثانية ولا ردّ منفصل.
+        final Map<String, dynamic>? match = results
+            .whereType<Map<String, dynamic>>()
+            .cast<Map<String, dynamic>?>()
+            .firstWhere(
+              (Map<String, dynamic>? r) => r?['version'] == storeVersion,
+              orElse: () => results.first as Map<String, dynamic>,
             );
-          }
-        }
 
-        onUpdateAvailable(isMandatory);
+        onUpdateAvailable(
+          isMandatory,
+          match == null
+              ? null
+              : AppReleaseInfo.fromItunes(match, isMandatory: isMandatory),
+        );
       }
     } catch (e) {
       onError?.call(e);
