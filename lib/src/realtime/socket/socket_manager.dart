@@ -145,7 +145,7 @@ class SocketManager with WidgetsBindingObserver {
           }
         },
       );
-    } catch (e) {
+    } on Exception catch (e) {
       if (generation != _connectionGeneration) return;
       log('catchError for socket $e', error: e, name: 'wss $url');
       _closeChannel();
@@ -164,7 +164,7 @@ class SocketManager with WidgetsBindingObserver {
   void _closeChannel() {
     try {
       _channel?.sink.close(3000);
-    } catch (_) {}
+    } on Exception catch (_) {}
     _channel = null;
     _state = SocketConnectionState.disconnected;
   }
@@ -237,7 +237,7 @@ class SocketManager with WidgetsBindingObserver {
       final encoded = jsonEncode(message);
       _channel!.sink.add(encoded);
       log('sent: $encoded', name: 'wss: $url');
-    } catch (e) {
+    } on Object catch (e) {
       log('Error sending message: $e', name: 'wss $url', error: e);
     }
   }

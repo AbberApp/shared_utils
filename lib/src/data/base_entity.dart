@@ -34,7 +34,7 @@ abstract class BaseEntity<ResultType> {
       final uri = Uri.parse(next);
       final offsetStr = uri.queryParameters['offset'];
       return offsetStr != null ? int.tryParse(offsetStr) : null;
-    } catch (_) {
+    } on Object catch (_) {
       return null;
     }
   }

@@ -42,7 +42,7 @@ dynamic handleResponse(Response<dynamic> response) {
     }
   } on DioException {
     rethrow;
-  } catch (e) {
+  } on Exception catch (e) {
     throw DioException(
       requestOptions: response.requestOptions,
       error: 'خطأ غير متوقع: ${e.toString()}',
@@ -75,7 +75,7 @@ dynamic _handleSuccessResponse(
   if (data != null) {
     try {
       return data is String ? jsonDecode(data) : data;
-    } catch (_) {
+    } on Exception catch (_) {
       return data;
     }
   }

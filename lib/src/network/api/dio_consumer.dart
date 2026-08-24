@@ -122,7 +122,7 @@ class DioConsumer implements ApiConsumer {
         onReceiveProgress: onReceiveProgress,
       );
       return response;
-    } catch (e) {
+    } on Exception catch (e) {
       throw Exception('Failed to download file: $e');
     }
   }

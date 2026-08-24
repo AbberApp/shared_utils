@@ -40,7 +40,7 @@ class AppUpdateChecker {
       } else if (Platform.isIOS) {
         await checkIOSUpdate(appStoreId, onUpdateAvailable, onError);
       }
-    } catch (e) {
+    } on Exception catch (e) {
       log('Error checking for update: $e', name: 'AppUpdateChecker', error: e);
       onError?.call(e);
     }
@@ -61,7 +61,7 @@ class AppUpdateChecker {
       AppReleaseInfo? info;
       try {
         info = await fetchReleaseInfo(appStoreId);
-      } catch (_) {
+      } on Exception catch (_) {
         info = null;
       }
       onUpdateAvailable(true, info);
@@ -182,7 +182,7 @@ class AppUpdateChecker {
               : AppReleaseInfo.fromItunes(match, isMandatory: isMandatory),
         );
       }
-    } catch (e) {
+    } on Object catch (e) {
       onError?.call(e);
     }
   }
@@ -225,7 +225,7 @@ class AppUpdateChecker {
             ? false
             : isMandatoryUpdate(localVersion, storeVersion),
       );
-    } catch (e) {
+    } on Object catch (e) {
       log('fetchReleaseInfo failed: $e', name: 'AppUpdateChecker', error: e);
       return null;
     }
@@ -248,7 +248,7 @@ class AppUpdateChecker {
       if (localVersion == storeVersion) return false;
 
       return _compareVersions(localVersion, storeVersion);
-    } catch (e) {
+    } on Exception catch (e) {
       log('Error comparing versions: $e', name: 'AppUpdateChecker', error: e);
       return false;
     }

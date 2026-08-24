@@ -138,7 +138,7 @@ class DeviceInfoManager {
 
       _isInitialized = true;
       return _deviceInfo!;
-    } catch (e) {
+    } on Object catch (e) {
       _initializeFuture = null; // السماح بإعادة المحاولة
       debugPrint('خطأ في تهيئة DeviceInfoManager: $e');
       rethrow;

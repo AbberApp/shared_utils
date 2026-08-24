@@ -21,103 +21,77 @@ const List<String> supportedAudioTypes = [
 const List<String> supportedVideoTypes = ['mp4', 'mkv', 'avi', 'mov', 'wmv'];
 
 /// مدير اختيار الملفات
+///
+/// مبنيّ على `FilePicker.pickFile` **المفردة** لا `pickFiles(allowMultiple: false)`:
+/// كل دوالّ هذا الصنف تُعيد ملفاً واحداً، فالمفردة تُعبّر عن النيّة مباشرةً وتُغني
+/// عن `.files.single` التي كانت ترمي `StateError` لو عاد أكثر من ملف.
 class FilePickerManager {
   const FilePickerManager._();
 
-  /// اختيار ملف
-  static Future<File?> pickFile() async {
+  /// امتداد الملف من اسمه، بحروف صغيرة، أو `null` إن لم يكن له امتداد.
+  ///
+  /// `PlatformFile` لم يعد يوفّر `extension` في file_picker 12، والاسم هو
+  /// المصدر الوحيد المتاح. نأخذ ما بعد آخر نقطة، ونتجاهل الاسم الذي يبدأ بنقطة
+  /// بلا امتداد حقيقي (مثل `.gitignore`).
+  static String? _extensionOf(String name) {
+    final int dot = name.lastIndexOf('.');
+    if (dot <= 0 || dot == name.length - 1) return null;
+    return name.substring(dot + 1).toLowerCase();
+  }
+
+  /// يفتح المُنتقي ويُعيد الملف المختار، أو `null` عند الإلغاء أو الخطأ.
+  static Future<File?> _pick({
+    required FileType type,
+    List<String>? allowedExtensions,
+    bool Function(String? extension)? validate,
+    String? invalidMessage,
+  }) async {
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.any,
-        allowMultiple: false,
+      final PlatformFile? picked = await FilePicker.pickFile(
+        type: type,
+        allowedExtensions: allowedExtensions,
       );
 
-      if (result != null && result.files.single.path != null) {
-        return File(result.files.single.path!);
+      final String? path = picked?.path;
+      if (picked == null || path == null) return null;
+
+      if (validate != null && !validate(_extensionOf(picked.name))) {
+        showToast(invalidMessage!);
+        return null;
       }
-      return null;
-    } catch (e) {
+      return File(path);
+    } on Exception catch (e) {
       showToast('حدث خطأ أثناء اختيار الملف: $e');
       return null;
     }
   }
 
-  // pick svg file
-  static Future<File?> pickSvg() async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['svg'],
-        allowMultiple: false,
-      );
+  /// اختيار ملف
+  static Future<File?> pickFile() => _pick(type: FileType.any);
 
-      if (result != null && result.files.single.path != null) {
-        return File(result.files.single.path!);
-      }
-      return null;
-    } catch (e) {
-      showToast('حدث خطاء اثناء اختيار الملف: $e');
-      return null;
-    }
-  }
+  /// اختيار ملف svg
+  static Future<File?> pickSvg() =>
+      _pick(type: FileType.custom, allowedExtensions: const ['svg']);
 
   /// اختيار ملف صوتي
-  static Future<File?> pickAudio() async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: supportedAudioTypes,
-        allowMultiple: false,
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        final extension = result.files.single.extension?.toLowerCase();
-
-        if (_isValidAudio(extension)) {
-          return file;
-        } else {
-          showToast('الرجاء اختيار ملف صوتي فقط');
-        }
-      }
-      return null;
-    } catch (e) {
-      showToast('حدث خطأ أثناء اختيار الملف: $e');
-      return null;
-    }
-  }
+  static Future<File?> pickAudio() => _pick(
+    type: FileType.custom,
+    allowedExtensions: supportedAudioTypes,
+    validate: _isValidAudio,
+    invalidMessage: 'الرجاء اختيار ملف صوتي فقط',
+  );
 
   /// اختيار ملف فيديو
-  static Future<File?> pickVideo() async {
-    try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: supportedVideoTypes,
-        allowMultiple: false,
-      );
+  static Future<File?> pickVideo() => _pick(
+    type: FileType.custom,
+    allowedExtensions: supportedVideoTypes,
+    validate: _isValidVideo,
+    invalidMessage: 'الرجاء اختيار ملف فيديو فقط',
+  );
 
-      if (result != null && result.files.single.path != null) {
-        final file = File(result.files.single.path!);
-        final extension = result.files.single.extension?.toLowerCase();
+  static bool _isValidAudio(String? extension) =>
+      extension != null && supportedAudioTypes.contains(extension);
 
-        if (_isValidVideo(extension)) {
-          return file;
-        } else {
-          showToast('الرجاء اختيار ملف فيديو فقط');
-        }
-      }
-      return null;
-    } catch (e) {
-      showToast('حدث خطأ أثناء اختيار الملف: $e');
-      return null;
-    }
-  }
-
-  static bool _isValidAudio(String? extension) {
-    return extension != null && supportedAudioTypes.contains(extension);
-  }
-
-  static bool _isValidVideo(String? extension) {
-    return extension != null && supportedVideoTypes.contains(extension);
-  }
+  static bool _isValidVideo(String? extension) =>
+      extension != null && supportedVideoTypes.contains(extension);
 }

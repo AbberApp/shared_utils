@@ -196,7 +196,7 @@ extension DateStringExtension on String {
       }
 
       return birthDate.toDateString;
-    } catch (_) {
+    } on Exception catch (_) {
       return this;
     }
   }

@@ -90,7 +90,7 @@ class ImagePickerManager {
         return XFile(croppedFile.path);
       }
       return null;
-    } catch (e) {
+    } on Object catch (e) {
       debugPrint('خطأ في قص الصورة: $e');
       showToast('حدث خطأ أثناء قص الصورة');
       return null;

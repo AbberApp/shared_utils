@@ -38,7 +38,7 @@ ${message ?? ''}
 نسخة التطبيق: ${deviceInfo.infoOrNull?.app.fullVersion}
 ''';
     encodedText = Uri.encodeComponent(data);
-  } catch (_) {}
+  } on Exception catch (_) {}
 
   // محاولة فتح تطبيق واتساب مباشرة (أفضل لـ iOS)
   final whatsappUri = Uri.parse(

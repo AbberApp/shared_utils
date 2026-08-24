@@ -17,7 +17,7 @@ Map<String, dynamic> parseToMap(dynamic rawData) {
       final decoded = jsonDecode(cleaned);
       if (decoded is! Map) return {};
       return _processMap(decoded);
-    } catch (_) {}
+    } on Object catch (_) {}
 
     // محاولة ثانية: إصلاح المفاتيح والقيم غير المقتبسة (صيغة Dart/Python toString)
     try {
@@ -25,7 +25,7 @@ Map<String, dynamic> parseToMap(dynamic rawData) {
       final decoded = jsonDecode(fixed);
       if (decoded is! Map) return {};
       return _processMap(decoded);
-    } catch (e) {
+    } on Object catch (e) {
       log('Failed to parse data: $e', name: 'parseToMap');
       return {};
     }
@@ -93,7 +93,7 @@ dynamic _tryParseString(String value) {
     if (decoded is Map) return _processMap(decoded);
     if (decoded is List) return decoded.map(_processValue).toList();
     return value;
-  } catch (_) {
+  } on Exception catch (_) {
     return value;
   }
 }

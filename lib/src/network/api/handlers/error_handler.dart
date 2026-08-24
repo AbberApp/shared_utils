@@ -192,7 +192,7 @@ class ErrorHandler implements Exception {
         return data;
       }
       return {};
-    } catch (_) {
+    } on Object catch (_) {
       return {};
     }
   }

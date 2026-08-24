@@ -162,7 +162,7 @@ class SseManager with WidgetsBindingObserver {
       _state = SseConnectionState.disconnected;
       _errorCallback?.call(e);
       _scheduleReconnect();
-    } catch (e) {
+    } on Object catch (e) {
       if (generation != _connectionGeneration) return;
       _isConnecting = false;
       log('catchError $e', error: e, name: 'sse: $url');

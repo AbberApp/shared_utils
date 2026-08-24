@@ -63,7 +63,7 @@ class Failure {
           error == null) {
         error = json['errors'] as String;
       }
-    } catch (_) {}
+    } on Object catch (_) {}
 
     List<FieldError> fields = [];
     try {
@@ -72,7 +72,7 @@ class Failure {
             .map((e) => FieldError.fromJson(e as Map<String, dynamic>))
             .toList();
       }
-    } catch (_) {}
+    } on Object catch (_) {}
 
     return Failure(code: code, message: error, fields: fields);
   }
