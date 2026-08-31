@@ -15,6 +15,21 @@ import 'package:path_provider/path_provider.dart';
 ///   saveFile: (key, file) => box.saveData(key: key, value: file),
 ///   deleteKey: (key) => box.deleteData(key: key),
 /// );
+/// الملفّ لم يعد موجوداً في مُخزّن الوسائط.
+///
+/// يُميَّز عن أخطاء الشبكة لأنّه **لا يُصلَح بإعادة المحاولة**: المحتوى ذهب.
+/// المستدعي يعرض رسالة مفهومة («لم يعد متاحاً») بدل خطأٍ غامض، ولا يُرسله
+/// إلى تتبّع الأخطاء — فليس عطباً نملك إصلاحه.
+class FileNoLongerAvailableException implements Exception {
+  const FileNoLongerAvailableException(this.url, this.statusCode);
+
+  final String url;
+  final int statusCode;
+
+  @override
+  String toString() => 'FileNoLongerAvailableException($statusCode): $url';
+}
+
 /// ```
 class FileCacheManager {
   FileCacheManager._({
@@ -102,6 +117,12 @@ class FileCacheManager {
     if (file.existsSync()) file.deleteSync();
 
     if (response.statusCode != 200) {
+      // 403/404 من مُخزّن الوسائط تعني ملفّاً لم يعد موجوداً، لا عطباً.
+      // S3 يُخفي وجود المفاتيح: من لا يملك `s3:ListBucket` يرى AccessDenied
+      // (403) بدل NoSuchKey (404) — فالرسالة تقول «ممنوع» وتعني «غير موجود».
+      if (response.statusCode == 403 || response.statusCode == 404) {
+        throw FileNoLongerAvailableException(url, response.statusCode!);
+      }
       throw Exception('Failed to download: ${response.statusCode}');
     }
 
