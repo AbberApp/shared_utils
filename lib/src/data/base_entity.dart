@@ -5,10 +5,22 @@ abstract class BaseEntity<ResultType> {
   int count;
   @JsonKey(defaultValue: '')
   String next;
+  /// رابط الصفحة السابقة — تُرجعه بعض النقاط ولا تُرجعه أخرى، فهو اختياري
+  /// بافتراضٍ فارغ: النماذج التي لا تعرفه تبقى كما هي.
+  @JsonKey(defaultValue: '')
+  String previous;
   @JsonKey(defaultValue: [])
   List<ResultType> results;
 
-  BaseEntity({required this.count, required this.next, required this.results});
+  BaseEntity({
+    required this.count,
+    required this.next,
+    required this.results,
+    this.previous = '',
+  });
+
+  /// هل يوجد رابط للصفحة السابقة
+  bool get hasPrevious => previous.isNotEmpty;
 
   /// هل يوجد رابط للصفحة التالية
   bool get hasNext => next.isNotEmpty;
