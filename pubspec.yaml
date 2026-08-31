@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.14.0
+version: 2.15.0
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -15,6 +15,7 @@ dependencies:
 
   # Network
   audio_session: ^0.2.4
+  sentry_flutter: ^9.27.0
   bloc: ^9.2.1
   dio: ^5.11.0
   connectivity_plus: ^7.3.1

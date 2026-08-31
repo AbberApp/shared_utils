@@ -118,3 +118,10 @@ export 'src/state/safe_bloc.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 
 export 'src/services/audio/audio_session_config.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Monitoring - Sentry
+// ═══════════════════════════════════════════════════════════════════════════
+
+export 'src/services/monitoring/sentry_bootstrap.dart';
+export 'src/services/monitoring/sentry_noise_filter.dart';
