@@ -59,4 +59,51 @@ abstract final class SentryBootstrap {
       appRunner: appRunner,
     );
   }
+
+  /// يربط الأحداث اللاحقة بمستخدمٍ بعينه.
+  ///
+  /// [data] خريطة حرّة عمداً: لكل تطبيق حقوله (مشترٍ/معبّر، تاجر، مسؤول…)،
+  /// والمكتبة لا تعرف نماذجه ولا ينبغي. فتمرّر ما يهمّك وحده.
+  ///
+  /// ```dart
+  /// SentryBootstrap.identify(
+  ///   id: user.id.toString(),
+  ///   username: user.username,
+  ///   email: user.email,
+  ///   data: {'is_buyer': user.isBuyer, 'is_seller': user.isSeller},
+  ///   tags: {'user_type': user.userType.ar},
+  /// );
+  /// ```
+  ///
+  /// ميزة تكميلية: تفشل صامتةً ولا تُعطّل مسار تسجيل الدخول.
+  static void identify({
+    required String id,
+    String? username,
+    String? email,
+    Map<String, dynamic> data = const <String, dynamic>{},
+    Map<String, String> tags = const <String, String>{},
+  }) {
+    try {
+      Sentry.configureScope((Scope scope) {
+        scope.setUser(
+          SentryUser(
+            id: id,
+            username: username,
+            email: email,
+            data: data.isEmpty ? null : data,
+          ),
+        );
+        tags.forEach(scope.setTag);
+      });
+    } on Object catch (_) {
+      // لا شيء: هويّة المستخدم في التتبّع لا تستحقّ إسقاط تسجيل الدخول.
+    }
+  }
+
+  /// يمسح هويّة المستخدم — عند تسجيل الخروج.
+  static void forget() {
+    try {
+      Sentry.configureScope((Scope scope) => scope.setUser(null));
+    } on Object catch (_) {}
+  }
 }
