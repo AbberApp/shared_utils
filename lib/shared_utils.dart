@@ -48,6 +48,7 @@ export 'src/utils/extensions/arabic_digits_extension.dart';
 // Formatters - المنسقات
 // ═══════════════════════════════════════════════════════════════════════════
 
+export 'src/ui/forms/field_errors.dart';
 export 'src/ui/formatters/number_formatter.dart';
 export 'src/ui/formatters/card_formatter.dart';
 export 'src/ui/formatters/text_formatter.dart';

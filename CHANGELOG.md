@@ -1,3 +1,11 @@
+## 2.17.0
+
+* feat(forms): `FieldErrors.apply` / `FieldErrors.clear` — تربط أخطاء الحقول
+  القادمة من الخادم (`Failure.fields`) بحقول `Form` مباشرةً. الأوّليّات كانت
+  موجودة (`hasFields` و`fieldError`) والربط متروكاً لكلّ تطبيق، فكُتب في كلٍّ
+  منها بيدٍ مختلفة أو لم يُكتب: فيُعرض خطأ الحقل حواراً عامّاً والمستخدم لا
+  يعرف أيّ حقلٍ يصلح.
+
 ## 2.8.18
 
 * fix(SocketManager): reset the reconnect-attempt counter on app resume before
