@@ -126,3 +126,22 @@ export 'src/services/audio/audio_session_config.dart';
 
 export 'src/services/monitoring/sentry_bootstrap.dart';
 export 'src/services/monitoring/sentry_noise_filter.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
+// حزم المنصّة المشتركة — تُصدَّر من هنا لا تُضاف في كلّ تطبيق
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// موضعها هنا يوحّد إصدارها على كلّ المشاريع: ترقيةٌ واحدة في المكتبة تسري
+// على الجميع، بدل ثمانية `pubspec` يتخلّف بعضها عن بعض (كان share_plus
+// موزّعًا على 13.0.0 و13.1.0 و13.3.0 في وقتٍ واحد).
+//
+// ولا تُضف `open_filex` مكان `open_file`: الأولى بلا `Package.swift` فتُبقي
+// CocoaPods حيّةً في كلّ مشروعٍ يستعملها.
+
+export 'package:connectivity_plus/connectivity_plus.dart';
+export 'package:dio/dio.dart';
+export 'package:json_annotation/json_annotation.dart';
+export 'package:open_file/open_file.dart';
+export 'package:share_plus/share_plus.dart';
+export 'package:skeletonizer/skeletonizer.dart';
+export 'package:url_launcher/url_launcher.dart';

@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.17.0
+version: 2.18.0
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -37,6 +37,10 @@ dependencies:
   intl: ^0.20.3
   phone_numbers_parser: ^9.0.25
   url_launcher: ^6.3.2
+  share_plus: ^13.3.0
+  # open_file لا open_filex: الأصل المُصان ويدعم SPM عبر open_file_ios،
+  # بينما open_filex بلا Package.swift فتُبقي CocoaPods حيّة.
+  open_file: ^4.0.0
 
   # Device Info
   device_info_plus: ^13.2.0
