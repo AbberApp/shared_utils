@@ -241,3 +241,8 @@ DeviceInfoManager deviceInfo;
 2. **قبل كتابة أي أداة** — تحقق من المكتبة أولاً
 3. **قبل استخدام أي package خارجي** — تحقق إذا كانت shared_utils تغطيه
 4. **`PaginatedListView`** بدل بناء `ListView` + `LoadMoreWidget` + `SkeletonizerWidget` يدوياً إذا كان الـ layout بسيطاً
+
+## الفرع الوحيد: `stable`
+
+لا فرع في هذا المستودع غير `stable` — ولا وسوم. ممنوع إنشاء فرعٍ باسمٍ
+آخر مهما كان الغرض؛ وما وُجد منها يُدمج في `stable` ثمّ يُحذف نهائياً.
