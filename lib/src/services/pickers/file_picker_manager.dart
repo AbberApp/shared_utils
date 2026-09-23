@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -60,8 +61,23 @@ class FilePickerManager {
         return null;
       }
       return File(path);
-    } on Exception catch (e) {
-      showToast('حدث خطأ أثناء اختيار الملف: $e');
+    } on Object catch (e, s) {
+      // `on Object` لا `on Exception`: المُنتقي يرمي `Error` لا `Exception` في
+      // حالات واقعية — `ArgumentError` من بناء نتيجة SAF بلا اسم أو مسار على
+      // أندرويد، و`UnimplementedError` على منصّة بلا تنفيذ مسجَّل. و`Error`
+      // ليس `Exception`، فكان يهرب من الالتقاط إلى الـzone ويُسقط التطبيق
+      // لأنّ المستدعي ينادي الدالّة من `onTap` بلا حراسة.
+      //
+      // ونفصل السجلّ عن العرض: نصّ الاستثناء تقنيّ وإنجليزيّ
+      // (`PlatformException(read_external_storage_denied, ...)`) ولا يفهمه
+      // المستخدم وقد يكشف تفاصيل داخلية، فيبقى في السجلّ وحده.
+      log(
+        'تعذّر اختيار الملف: $e',
+        name: 'FilePickerManager',
+        error: e,
+        stackTrace: s,
+      );
+      showToast('حدث خطأ أثناء اختيار الملف');
       return null;
     }
   }

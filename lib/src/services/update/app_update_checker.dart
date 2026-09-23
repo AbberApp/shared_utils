@@ -34,38 +34,71 @@ class AppUpdateChecker {
         onUpdateAvailable,
     void Function(Object error)? onError,
   }) async {
+    // الـcallback يُستدعى **بعد** كتلة try لا داخلها: خطأٌ يقع في واجهة
+    // التطبيق (شاشة التحديث الإجباريّ مثلاً) ليس فشلَ فحص، فلا يُبتلع في
+    // onError ويُنسب زوراً إلى تعذّر الاتّصال بالمتجر.
+    bool? isMandatory;
+    AppReleaseInfo? info;
     try {
       if (Platform.isAndroid) {
-        await _checkAndroidUpdate(appStoreId, onUpdateAvailable);
+        final (bool, AppReleaseInfo?)? result =
+            await _checkAndroidUpdate(appStoreId);
+        if (result != null) {
+          isMandatory = result.$1;
+          info = result.$2;
+        }
       } else if (Platform.isIOS) {
+        // checkIOSUpdate يتكفّل بنداء الـcallback وبـonError، فلا نكرّرهما.
         await checkIOSUpdate(appStoreId, onUpdateAvailable, onError);
+        return;
       }
-    } on Exception catch (e) {
-      log('Error checking for update: $e', name: 'AppUpdateChecker', error: e);
+    } on Object catch (e, s) {
+      // `on Object` لا `on Exception`: in_app_update قد يرمي Error لا Exception
+      // (مثل StateError من firstWhere بلا orElse على installStatus غير معروف)،
+      // و`on Exception` يتركه يهرب إلى الـzone فيسقط التطبيق.
+      log(
+        'Error checking for update: $e',
+        name: 'AppUpdateChecker',
+        error: e,
+        stackTrace: s,
+      );
       onError?.call(e);
+      return;
     }
+
+    if (isMandatory != null) onUpdateAvailable(isMandatory, info);
   }
 
-  Future<void> _checkAndroidUpdate(
+  /// يُرجع `(isMandatory, info)` عند توفّر تحديث، و`null` إن لم يتوفّر.
+  Future<(bool, AppReleaseInfo?)?> _checkAndroidUpdate(
     String appStoreId,
-    void Function(bool isMandatory, [AppReleaseInfo? info]) onUpdateAvailable,
   ) async {
     final updateInfo = await InAppUpdate.checkForUpdate();
 
-    if (updateInfo.updateAvailability == UpdateAvailability.updateAvailable) {
-      // Android exposes only versionCode (not versionName), so we can't tell a
-      // minor bump from a patch → every available Android update is mandatory.
-      log('Update available - Android (mandatory)', name: 'AppUpdateChecker');
-      // Play لا يوفّر ملاحظات الإصدار بلا مصادقة، فنقرأها من آبل — النصّ نفسه
-      // في المتجرين عملياً. عرضٌ فقط: يفشل بصمت ولا يعطّل التحديث.
-      AppReleaseInfo? info;
-      try {
-        info = await fetchReleaseInfo(appStoreId);
-      } on Exception catch (_) {
-        info = null;
-      }
-      onUpdateAvailable(true, info);
+    if (updateInfo.updateAvailability != UpdateAvailability.updateAvailable) {
+      return null;
     }
+
+    // Android exposes only versionCode (not versionName), so we can't tell a
+    // minor bump from a patch → every available Android update is mandatory.
+    log('Update available - Android (mandatory)', name: 'AppUpdateChecker');
+    // Play لا يوفّر ملاحظات الإصدار بلا مصادقة، فنقرأها من آبل — النصّ نفسه
+    // في المتجرين عملياً. عرضٌ فقط: يُسجَّل خطؤه ولا يعطّل التحديث.
+    AppReleaseInfo? info;
+    try {
+      info = await fetchReleaseInfo(appStoreId);
+    } on Object catch (e, s) {
+      // لا يُبتلع صامتاً: يُسجَّل مع أثر المكدّس فيلتقطه Sentry، ثمّ يمضي
+      // التحديث بلا ملاحظات — فشلُ العرض ليس فشلَ فحص.
+      log(
+        'Fetching release notes failed: $e',
+        name: 'AppUpdateChecker',
+        error: e,
+        stackTrace: s,
+      );
+      info = null;
+    }
+    return (true, info);
   }
 
   /// فحص تحديث iOS مباشرة من iTunes API
@@ -74,6 +107,9 @@ class AppUpdateChecker {
     void Function(bool isMandatory, [AppReleaseInfo? info]) onUpdateAvailable,
     void Function(Object error)? onError,
   ) async {
+    // يُستدعى الـcallback بعد كتلة try لا داخلها — راجع التعليل في checkForUpdate.
+    bool? pendingMandatory;
+    AppReleaseInfo? pendingInfo;
     try {
       log('Checking for update - iOS', name: 'AppUpdateChecker');
       log('App Store ID: $appStoreId', name: 'AppUpdateChecker');
@@ -167,23 +203,41 @@ class AppUpdateChecker {
 
         // التفاصيل تصل مع نفس النداء — نفس الاستجابة التي قارنّا بها الإصدار
         // تحمل `releaseNotes`، فلا طلبة ثانية ولا ردّ منفصل.
-        final Map<String, dynamic>? match = results
+        //
+        // الاحتياطيّ خريطةٌ فارغة لا `results.first`: العنصر الأوّل قد لا يكون
+        // خريطةً أصلاً — `whereType` أسقطت غير الخرائط للتوّ — فيرمي التحويل
+        // TypeError تبتلعه `on Object` أدناه فيضيع إشعار التحديث بأكمله. ولأنّ
+        // `storeVersion` مشتقٌّ من هذه النتائج نفسها فالمطابقة تقع دائماً،
+        // والاحتياطيّ حارسٌ لا مسار.
+        final Map<String, dynamic> match = results
             .whereType<Map<String, dynamic>>()
-            .cast<Map<String, dynamic>?>()
             .firstWhere(
-              (Map<String, dynamic>? r) => r?['version'] == storeVersion,
-              orElse: () => results.first as Map<String, dynamic>,
+              (Map<String, dynamic> r) => r['version'] == storeVersion,
+              orElse: () => const <String, dynamic>{},
             );
 
-        onUpdateAvailable(
-          isMandatory,
-          match == null
-              ? null
-              : AppReleaseInfo.fromItunes(match, isMandatory: isMandatory),
-        );
+        pendingMandatory = isMandatory;
+        pendingInfo = match.isEmpty
+            ? null
+            : AppReleaseInfo.fromItunes(match, isMandatory: isMandatory);
       }
-    } on Object catch (e) {
+    } on Object catch (e, s) {
+      // `on Object` لا `on Exception`: التحويلات هنا (json.decode والـcast)
+      // ترمي TypeError وهو Error لا Exception. وأثر المكدّس يُسجَّل داخلياً
+      // فيلتقطه Sentry، ويبقى `onError` على وسيطه الواحد كما يستهلكه
+      // المستدعون — لا توسيع للتوقيع من أجل وسيطٍ لا يقرؤه أحد.
+      log(
+        'Error checking for update - iOS: $e',
+        name: 'AppUpdateChecker',
+        error: e,
+        stackTrace: s,
+      );
       onError?.call(e);
+      return;
+    }
+
+    if (pendingMandatory != null) {
+      onUpdateAvailable(pendingMandatory, pendingInfo);
     }
   }
 
@@ -225,8 +279,13 @@ class AppUpdateChecker {
             ? false
             : isMandatoryUpdate(localVersion, storeVersion),
       );
-    } on Object catch (e) {
-      log('fetchReleaseInfo failed: $e', name: 'AppUpdateChecker', error: e);
+    } on Object catch (e, s) {
+      log(
+        'fetchReleaseInfo failed: $e',
+        name: 'AppUpdateChecker',
+        error: e,
+        stackTrace: s,
+      );
       return null;
     }
   }
@@ -248,28 +307,38 @@ class AppUpdateChecker {
       if (localVersion == storeVersion) return false;
 
       return _compareVersions(localVersion, storeVersion);
-    } on Exception catch (e) {
-      log('Error comparing versions: $e', name: 'AppUpdateChecker', error: e);
+    } on Object catch (e, s) {
+      // `on Object` لا `on Exception`: تفكيك الإصدار قد يرمي Error لا
+      // Exception (RangeError مثلاً)، و`on Exception` يتركه يهرب إلى الـzone
+      // فيُسقط الفحص كلّه بدل أن يُرجع «لا تحديث».
+      log(
+        'Error comparing versions: $e',
+        name: 'AppUpdateChecker',
+        error: e,
+        stackTrace: s,
+      );
       return false;
     }
   }
 
-  /// مقارنة أرقام الإصدار (major.minor.patch)
+  /// مقارنة أرقام الإصدار خانةً خانةً — هل في المتجر أحدث من المحلّي؟
   bool _compareVersions(String local, String store) {
-    final localParts = local.split('.');
-    final storeParts = store.split('.');
+    // نمرّ على كلّ الخانات لا ثلاثاً: App Store يقبل أربع خانات في
+    // CFBundleShortVersionString، فالوقوف عند الثالثة يُعمي إصدار إصلاحٍ
+    // عاجل مثل 10.8.6.1 ← 10.8.6.2 فلا يُكتشف التحديث أبداً.
+    final List<String> localParts = _versionSegments(local);
+    final List<String> storeParts = _versionSegments(store);
+    final int length = localParts.length > storeParts.length
+        ? localParts.length
+        : storeParts.length;
 
-    // مقارنة حتى 3 أجزاء (major, minor, patch)
-    for (int i = 0; i < 3; i++) {
-      final localPart = i < localParts.length
-          ? int.tryParse(localParts[i]) ?? 0
-          : 0;
-      final storePart = i < storeParts.length
-          ? int.tryParse(storeParts[i]) ?? 0
-          : 0;
+    for (int i = 0; i < length; i++) {
+      final BigInt localPart =
+          i < localParts.length ? _segmentValue(localParts[i]) : BigInt.zero;
+      final BigInt storePart =
+          i < storeParts.length ? _segmentValue(storeParts[i]) : BigInt.zero;
 
-      if (storePart > localPart) return true;
-      if (storePart < localPart) return false;
+      if (storePart != localPart) return storePart > localPart;
     }
 
     return false;
@@ -279,21 +348,35 @@ class AppUpdateChecker {
   /// (major/minor)، واختياريّ إذا كان التغيير في الخانة الصغرى (patch) فقط.
   @visibleForTesting
   bool isMandatoryUpdate(String local, String store) {
-    final List<int> l = _versionParts(local);
-    final List<int> s = _versionParts(store);
+    final List<BigInt> l = _versionParts(local);
+    final List<BigInt> s = _versionParts(store);
     if (s[0] != l[0]) return s[0] > l[0]; // major
     if (s[1] != l[1]) return s[1] > l[1]; // minor
     return false; // patch only → اختياريّ
   }
 
+  /// خانات الإصدار نصّاً بلا لاحقة البناء (+N أو -x) — مصدرٌ واحد للتفكيك
+  /// تشترك فيه المقارنة وتحديد الإجباريّة فلا يختلفان.
+  List<String> _versionSegments(String version) =>
+      version.trim().split('+').first.split('-').first.split('.');
+
+  /// قيمة خانةٍ واحدة عدداً، والخانة غير المفهومة صفر.
+  ///
+  /// `BigInt` لا `int`: خانةٌ تتجاوز سعة الـ64 بت (وسمٌ زمنيّ أو رقم بناءٍ
+  /// طويل وُضع في خانة الإصدار) تُرجع `null` من `int.tryParse` فتُقرأ صفراً،
+  /// فينقلب الحكم ويصير الإصدار الأحدث أقدمَ من المحلّيّ فلا يُكتشف التحديث.
+  /// و`BigInt.tryParse` يقرأ أيّ طولٍ من الأرقام بلا فيضان، ويطابق
+  /// `int.tryParse` في ردّ ما ليس رقماً (`abc`, `٢`, النصّ الفارغ) إلى `null`.
+  BigInt _segmentValue(String raw) =>
+      BigInt.tryParse(raw.trim()) ?? BigInt.zero;
+
   /// تفكيك الإصدار إلى [major, minor, patch] متجاهلاً لاحقة البناء (+N أو -x).
-  List<int> _versionParts(String version) {
-    final String core = version.trim().split('+').first.split('-').first;
-    final List<String> parts = core.split('.');
-    return [
-      parts.isNotEmpty ? int.tryParse(parts[0]) ?? 0 : 0,
-      parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0,
-      parts.length > 2 ? int.tryParse(parts[2]) ?? 0 : 0,
+  List<BigInt> _versionParts(String version) {
+    final List<String> parts = _versionSegments(version);
+    return <BigInt>[
+      parts.isNotEmpty ? _segmentValue(parts[0]) : BigInt.zero,
+      parts.length > 1 ? _segmentValue(parts[1]) : BigInt.zero,
+      parts.length > 2 ? _segmentValue(parts[2]) : BigInt.zero,
     ];
   }
 
@@ -316,8 +399,27 @@ class AppUpdateChecker {
   }
 
   /// تنفيذ التحديث الفوري (Android فقط)
-  Future<bool> performImmediateUpdate() async {
-    final result = await InAppUpdate.performImmediateUpdate();
-    return result == AppUpdateResult.success;
+  ///
+  /// يُرجع `false` بدل أن يرمي: النداء يعبر قناة المنصّة، فيرمي
+  /// PlatformException عند فشل Play (مثل REQUIRE_CHECK_FOR_UPDATE إن لم
+  /// يسبقه فحص)، وMissingPluginException على iOS حيث لا وجود للإضافة أصلاً.
+  Future<bool> performImmediateUpdate({
+    void Function(Object error)? onError,
+  }) async {
+    if (!Platform.isAndroid) return false;
+
+    try {
+      final result = await InAppUpdate.performImmediateUpdate();
+      return result == AppUpdateResult.success;
+    } on Object catch (e, s) {
+      log(
+        'performImmediateUpdate failed: $e',
+        name: 'AppUpdateChecker',
+        error: e,
+        stackTrace: s,
+      );
+      onError?.call(e);
+      return false;
+    }
   }
 }

@@ -31,12 +31,17 @@ class SocketManager with WidgetsBindingObserver {
 
   bool _intentionalClose = false;
   bool _enableReconnect = false;
-  bool _isConnecting = false;
   int _reconnectAttempts = 0;
   static const int _maxReconnectAttempts = 10;
   static const int _baseDelaySeconds = 2;
   static const int _maxDelaySeconds = 120;
   Timer? _reconnectTimer;
+
+  /// محاولة الاتصال الجارية. عَلَمٌ منطقيٌّ كان يجعل النداء المتداخل يعود
+  /// صامتاً «ناجحاً» والسوكِت لم يُنهِ `channel.ready` بعد، فيُرفض أوّل
+  /// `sendMessage` (join مثلاً) بلا أيّ إشعار. الاحتفاظ بالـFuture وإعادته
+  /// يجعل `await connect()` عقداً صادقاً: من ينتظره ينتظر الجهوزيّة فعلاً.
+  Future<void>? _connecting;
 
   // يمنع تداخل callbacks من اتصال قديم مع اتصال جديد
   int _connectionGeneration = 0;
@@ -65,12 +70,22 @@ class SocketManager with WidgetsBindingObserver {
     await _connect();
   }
 
-  Future<void> _connect({bool isReconnect = false}) async {
-    if (_isConnecting) return;
+  Future<void> _connect({bool isReconnect = false}) {
+    final Future<void>? inFlight = _connecting;
+    if (inFlight != null) return inFlight;
 
+    late final Future<void> attempt;
+    attempt = _runConnect(isReconnect: isReconnect).whenComplete(() {
+      // لا تمسح محاولةً أحدث أبطلت هذه (disconnect/_suspend يصفّران الحقل).
+      if (identical(_connecting, attempt)) _connecting = null;
+    });
+    _connecting = attempt;
+    return attempt;
+  }
+
+  Future<void> _runConnect({required bool isReconnect}) async {
     // أغلق أي اتصال سابق قبل فتح اتصال جديد
     _closeChannel();
-    _isConnecting = true;
 
     // جيل الاتصال الحالي - يمنع callbacks قديمة من التأثير على الاتصال الجديد
     final int generation = ++_connectionGeneration;
@@ -96,20 +111,22 @@ class SocketManager with WidgetsBindingObserver {
       // انتظر تأكيد الاتصال قبل تحديث الحالة
       await channel.ready;
 
-      // تجاهل النتيجة إذا صدر اتصال أحدث في الأثناء
-      if (generation != _connectionGeneration) {
-        unawaited(channel.sink.close(3000));
+      // تجاهل النتيجة إذا صدر اتصال أحدث — أو قُطع الاتصال عمداً — في الأثناء
+      if (generation != _connectionGeneration || _intentionalClose) {
+        unawaited(channel.sink.close(3000).catchError((_) {}));
         return;
       }
 
       _channel = channel;
       _state = SocketConnectionState.connected;
-      _isConnecting = false;
 
       if (isReconnect) {
         _reconnectAttempts = 0;
         log('reconnected successfully', name: 'wss: $url');
-        _reconnectedCallback?.call();
+        // استثناء المستهلك هنا كان يسقط في `on Object catch` أدناه فيُقرأ
+        // فشلَ اتصالٍ: تُغلق القناة ويُجدول وصلٌ جديد، والقناة أصلاً سليمة
+        // — بل لا يُركَّب `listen` بعدُ فتضيع كلّ الرسائل.
+        _safeCall('reconnected', () => _reconnectedCallback?.call());
       } else {
         log('connected', name: 'wss: $url');
       }
@@ -117,9 +134,11 @@ class SocketManager with WidgetsBindingObserver {
       channel.stream.listen(
         (message) {
           if (generation != _connectionGeneration) return;
-          log(message, name: 'wss: $url');
+          // `log` يقبل String فقط، والإطار قد يصل ثنائياً (Uint8List) فيُرمى
+          // TypeError داخل onData — ولا يلتقطه onError لأنّه ليس خطأ المجرى.
+          log(_asLogText(message), name: 'wss: $url');
           _state = SocketConnectionState.connected;
-          _messageCallback?.call(message);
+          _safeCall('message', () => _messageCallback?.call(message));
         },
         onError: (error) {
           if (generation != _connectionGeneration) return;
@@ -128,7 +147,7 @@ class SocketManager with WidgetsBindingObserver {
           if (!_intentionalClose && _enableReconnect) {
             _scheduleReconnect();
           } else {
-            _errorCallback?.call(error);
+            _safeCall('error', () => _errorCallback?.call(error));
           }
         },
         onDone: () {
@@ -141,24 +160,49 @@ class SocketManager with WidgetsBindingObserver {
           if (!_intentionalClose && _enableReconnect && !isPermanentClose) {
             _scheduleReconnect();
           } else {
-            _doneCallback?.call('onDone');
+            _safeCall('done', () => _doneCallback?.call('onDone'));
           }
         },
       );
-    } on Exception catch (e) {
+    } on Object catch (e) {
+      // `on Exception` كانت تترك أخطاء Error تهرب إلى الـ Zone
       if (generation != _connectionGeneration) return;
       log('catchError for socket $e', error: e, name: 'wss $url');
       _closeChannel();
-      _isConnecting = false;
       _state = SocketConnectionState.disconnected;
 
       if (!_intentionalClose && _enableReconnect) {
         _scheduleReconnect();
       } else {
-        _errorCallback?.call(e);
+        _safeCall('error', () => _errorCallback?.call(e));
         if (!isReconnect) rethrow;
       }
     }
+  }
+
+  /// استدعاء محميّ لـ callbacks المستهلك: المكتبة مشتركة بين أربعة تطبيقات،
+  /// واستثناءٌ في أحدها (حمولة غيّر الخادم شكلها فيرمي `fromJson` مثلاً) كان
+  /// يُرمى داخل `onData`/`onDone` فلا يلتقطه `onError` — لأنّه ليس خطأ
+  /// المجرى — فيهرب إلى الـZone: شاشةٌ حمراء في التطوير وإسقاطٌ في الإنتاج
+  /// من أجل رسالةٍ واحدة تالفة.
+  void _safeCall(String label, void Function() body) {
+    try {
+      body();
+    } on Object catch (e, st) {
+      log('$label callback threw', error: e, stackTrace: st, name: 'wss: $url');
+    }
+  }
+
+  String _asLogText(Object? message) {
+    if (message is String) return message;
+    if (message is List<int>) {
+      try {
+        return utf8.decode(message, allowMalformed: true);
+      } on Object catch (_) {
+        return '<binary ${message.length} bytes>';
+      }
+    }
+    return '$message';
   }
 
   void _closeChannel() {
@@ -174,7 +218,7 @@ class SocketManager with WidgetsBindingObserver {
 
     if (_reconnectAttempts >= _maxReconnectAttempts) {
       log('max reconnect attempts reached', name: 'wss $url');
-      _doneCallback?.call('onDone');
+      _safeCall('done', () => _doneCallback?.call('onDone'));
       return;
     }
 
@@ -195,7 +239,12 @@ class SocketManager with WidgetsBindingObserver {
         _reconnectAttempts = 0;
         return;
       }
-      await _connect(isReconnect: true);
+      try {
+        await _connect(isReconnect: true);
+      } on Object catch (_) {
+        // قد تكون هذه المحاولة هي نفسها محاولة `connect()` علنيّة ترمي عند
+        // الفشل؛ رميُها من داخل مؤقّت يهرب إلى الـZone بلا مُلتقِط.
+      }
     });
   }
 
@@ -220,8 +269,10 @@ class SocketManager with WidgetsBindingObserver {
         }
 
       case AppLifecycleState.detached:
-        // التطبيق مُغلق نهائياً
-        disconnect();
+        // `detached` ليست نهائيةً دائماً: قد يُعاد إرفاق المحرّك فيعود
+        // `resumed`. و`disconnect()` هنا يرفع `_intentionalClose` ويزيل الـ
+        // observer ويشطب النسخة من السجلّ، فلا يتعافى السوكِت بقيّة العمر.
+        _suspend();
 
       default:
         break;
@@ -242,9 +293,23 @@ class SocketManager with WidgetsBindingObserver {
     }
   }
 
+  /// تعليقٌ مؤقّت للاتصال دون وسمه إغلاقاً متعمّداً: يُبطل القناة والمحاولة
+  /// الجارية والمؤقّت فقط. رفعُ الجيل يُسقط callbacks القناة الميّتة كي لا
+  /// تجدول إعادة اتصالٍ والتطبيق خارج الخدمة، ويبقى الـobserver مسجّلاً
+  /// ليعيد الوصل عند `resumed`.
+  void _suspend() {
+    _connectionGeneration++;
+    _connecting = null;
+    _reconnectTimer?.cancel();
+    _closeChannel();
+  }
+
   void disconnect() {
     _intentionalClose = true;
-    _isConnecting = false;
+    // إبطال أيّ محاولة اتصال جارية: بدونه تُكمل محاولةٌ عالقة على
+    // `await channel.ready` فتُفعّل قناةً شبحاً تبقى حيّة بعد تسجيل الخروج.
+    _connectionGeneration++;
+    _connecting = null;
     _reconnectTimer?.cancel();
     _closeChannel();
     WidgetsBinding.instance.removeObserver(this);

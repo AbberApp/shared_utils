@@ -1,11 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../ui/widgets/toast.dart';
+
+/// `XFile` جزءٌ من توقيع `pickMultipleImages` و`cropImage`، فنصدّره من هنا
+/// صراحةً بدل الاتّكال على إعادة تصديره ضمناً عبر `share_plus`.
+export 'package:image_picker/image_picker.dart' show XFile;
 
 /// مصدر اختيار الصورة
 enum ImagePickerSource { camera, gallery }
@@ -20,24 +23,25 @@ class ImagePickerManager {
     int imageQuality = 85,
     bool useCrop = false,
   }) async {
+    final quality = _safeQuality(imageQuality);
     try {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: source == ImagePickerSource.camera
             ? ImageSource.camera
             : ImageSource.gallery,
-        imageQuality: imageQuality,
+        imageQuality: quality,
       );
 
       if (image == null) return null;
 
       if (useCrop) {
-        final cropped = await cropImage(image.path, imageQuality: imageQuality);
+        final cropped = await cropImage(image.path, imageQuality: quality);
         return cropped != null ? File(cropped.path) : null;
       }
 
       return File(image.path);
-    } on PlatformException catch (e) {
+    } on Object catch (e) {
       debugPrint('خطأ في اختيار الصورة: $e');
       showToast('حدث خطأ أثناء اختيار الصورة');
       return null;
@@ -50,13 +54,26 @@ class ImagePickerManager {
   }) async {
     try {
       final picker = ImagePicker();
-      final images = await picker.pickMultiImage(imageQuality: imageQuality);
+      final images = await picker.pickMultiImage(
+        imageQuality: _safeQuality(imageQuality),
+      );
       return images;
-    } on PlatformException catch (e) {
+    } on Object catch (e) {
       debugPrint('خطأ في اختيار الصور: $e');
       showToast('حدث خطأ أثناء اختيار الصور');
       return null;
     }
+  }
+
+  /// حصر الجودة في 0..100 — `image_picker` يتحقّق منها ويرمي `ArgumentError`
+  /// لا `PlatformException`، فيعبر أي التقاطٍ ضيّق ويُسقط التطبيق. نحصرها هنا
+  /// ليبقى السلوك آمناً في الإصدار، و`assert` يكشف القيمة الخاطئة في التطوير.
+  static int _safeQuality(int imageQuality) {
+    assert(
+      imageQuality >= 0 && imageQuality <= 100,
+      'imageQuality يجب أن تكون بين 0 و 100، والقيمة المُمرَّرة: $imageQuality',
+    );
+    return imageQuality.clamp(0, 100);
   }
 
   /// قص الصورة

@@ -4,7 +4,6 @@ abstract class ApiConsumer {
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
-    bool useToken = false,
   });
 
   Future<Response> post(

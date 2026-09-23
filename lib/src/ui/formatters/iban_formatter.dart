@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 
+import 'number_formatter.dart';
+
 /// أطوال IBAN لكل دولة وفق معيار ISO 13616
 const Map<String, int> _ibanLengths = {
   'AD': 24, // Andorra
@@ -96,6 +98,20 @@ const Map<String, int> _ibanLengths = {
 /// الحد الأقصى لطول IBAN بدون مسافات (روسيا 33)
 const int _maxIbanLength = 33;
 
+/// المحارف التي تُتجاهَل داخل الـIBAN: كل الفراغات (ومنها المسافة غير
+/// الفاصلة U+00A0 والضيّقة U+202F والجدولة والسطر الجديد) إضافةً إلى
+/// المحارف الخفيّة وعلامات الاتجاه.
+///
+/// السبب: الآيبان المنسوخ من صفحة بنكٍ أو من PDF يحمل هذه المحارف عادةً،
+/// وحذف المسافة ASCII وحدها كان يجعل آيباناً صحيحاً يُرفض صامتاً.
+final RegExp _ignorableIbanChars = RegExp(
+  r'[\s\u200B-\u200F\u202A-\u202E\u2066-\u2069]',
+);
+
+/// حذف المحارف المتجاهَلة ورفع الحروف — أساس كل تنظيفٍ في هذا الملف
+String _stripIgnorable(String value) =>
+    value.replaceAll(_ignorableIbanChars, '').toUpperCase();
+
 /// منسق حقل إدخال IBAN
 ///
 /// يقوم بـ:
@@ -109,8 +125,11 @@ class IbanFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    // استخراج المحارف النقية (بدون مسافات) وتحويلها لأحرف كبيرة
-    final raw = newValue.text.replaceAll(' ', '').toUpperCase();
+    // استخراج المحارف النقية (بدون فراغات) وتحويلها لأحرف كبيرة.
+    // التوحيد يبدأ بالأرقام العربية-الهندية كبقيّة منسّقات المكتبة
+    // (card/phone/number)، وإلّا سقط إدخال لوحة المفاتيح العربية صامتاً:
+    // المحرف يُرفض ويُعاد oldValue بلا رسالة، فيبدو الحقل معطّلاً.
+    final raw = _cleanInput(newValue.text);
 
     // رفض أي محرف غير حرف أو رقم
     if (!RegExp(r'^[A-Z0-9]*$').hasMatch(raw)) {
@@ -128,8 +147,36 @@ class IbanFormatter extends TextInputFormatter {
 
     return TextEditingValue(
       text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
+      selection: TextSelection.collapsed(
+        offset: _mapCursor(newValue, trimmed.length, formatted.length),
+      ),
     );
+  }
+
+  /// تنظيف نص الإدخال: توحيد الأرقام ثم حذف الفراغات ورفع الحروف
+  String _cleanInput(String text) =>
+      _stripIgnorable(convertArabicToEnglishNumbers(text));
+
+  /// موضع المؤشّر في النص المنسَّق مقابل موضعه في النص الوارد
+  ///
+  /// تثبيت المؤشّر على آخر النص كان يجعل تصحيح رقمٍ في وسط الآيبان
+  /// مستحيلاً: المحرف يُدرج في مكانه الصحيح ثم يقفز المؤشّر إلى النهاية،
+  /// فيُكتب ما بعده في آخر النص. لذا نَعُدّ المحارف النقية قبل المؤشّر
+  /// ونحوّل العدد إلى إزاحة بإضافة المسافات المُدرَجة قبله (مسافة لكل 4).
+  int _mapCursor(
+    TextEditingValue newValue,
+    int rawLength,
+    int formattedLength,
+  ) {
+    final end = newValue.selection.end;
+    if (end < 0) return formattedLength; // تحديد غير صالح ⇒ النهاية
+
+    final cut = end > newValue.text.length ? newValue.text.length : end;
+    var rawBefore = _cleanInput(newValue.text.substring(0, cut)).length;
+    if (rawBefore > rawLength) rawBefore = rawLength; // بعد القصّ بالطول
+
+    final offset = rawBefore + rawBefore ~/ 4;
+    return offset > formattedLength ? formattedLength : offset;
   }
 
   /// تحديد الطول الأقصى للـIBAN بناءً على رمز الدولة (أول حرفين)
@@ -157,8 +204,12 @@ class IbanFormatter extends TextInputFormatter {
 class IbanUtils {
   IbanUtils._();
 
-  /// إزالة المسافات والحصول على IBAN النقي للإرسال للـ API
-  static String strip(String iban) => iban.replaceAll(' ', '').toUpperCase();
+  /// إزالة الفراغات والحصول على IBAN النقي للإرسال للـ API
+  ///
+  /// تُحذف كل الفراغات لا المسافة ASCII وحدها (راجع [_ignorableIbanChars]).
+  /// ولا تُوحَّد هنا الأرقام العربية-الهندية عمداً: الآيبان الحامل لها ليس
+  /// صالحاً بمعيار ISO 13616، فتوحيدها يجعل [isValid] يقبل ما يرفضه المعيار.
+  static String strip(String iban) => _stripIgnorable(iban);
 
   /// تنسيق IBAN للعرض بمسافة كل 4 محارف
   static String format(String iban) {
@@ -182,6 +233,22 @@ class IbanUtils {
 
     final expectedLength = _ibanLengths[countryCode];
     if (expectedLength == null || raw.length != expectedLength) return false;
+
+    // حارس طقم المحارف قبل MOD 97: الطول وحده لا يضمن أن الباقي
+    // أبجديّ-رقميّ، وبدونه تصل محارف كالواصلة أو الرموز التعبيرية أو
+    // الأرقام العربية-الهندية إلى int.parse داخل الخوارزمية فترمي
+    // FormatException بدل أن تعيد الدالّة false.
+    if (!RegExp(r'^[A-Z0-9]+$').hasMatch(raw)) return false;
+
+    // خانتا التحقّق (الموضعان ٣-٤) رقمان حصراً بمعيار ISO 13616، ومداهما
+    // ٠٢..٩٨ لأنّ ISO 7064 يولّدهما بـ (٩٨ − الباقي) والباقي ٠..٩٦.
+    // لا الطولُ ولا MOD-97 يكشف خرق هذه القاعدة: الباقي دوريّ بـ ٩٧، فالخانة
+    // المكافئة (dd ± ٩٧) تعطي باقياً ١ أيضاً — IQ98 ↔ IQ01 وRU02 ↔ RU99
+    // وSA97 ↔ SA00؛ وبعضُ أزواج الحروف في الموضعين يعطيه صدفةً كـ SANZ.
+    final checkDigits = int.tryParse(raw.substring(2, 4));
+    if (checkDigits == null || checkDigits < 2 || checkDigits > 98) {
+      return false;
+    }
 
     return _validateMod97(raw);
   }
@@ -216,7 +283,11 @@ class IbanUtils {
     final digits = buffer.toString();
     int remainder = 0;
     for (int i = 0; i < digits.length; i++) {
-      remainder = (remainder * 10 + int.parse(digits[i])) % 97;
+      // tryParse لا parse: حزام أمانٍ ثانٍ كي تبقى الدالّة تعيد false
+      // بدل أن ترمي لو نودِيت يوماً بمُدخلٍ لم يمرّ بحارس المحارف أعلاه.
+      final digit = int.tryParse(digits[i]);
+      if (digit == null) return false;
+      remainder = (remainder * 10 + digit) % 97;
     }
 
     return remainder == 1;

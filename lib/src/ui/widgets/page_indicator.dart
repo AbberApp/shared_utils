@@ -13,7 +13,7 @@ class PageIndicator extends StatelessWidget {
     this.spacing = 8.0,
     this.dotSize = 8.0,
     this.expandedSize = 32.0,
-    this.animationDuration = Duration.zero,
+    this.animationDuration = const Duration(milliseconds: 400),
     this.fillPreviousDots = false,
   });
 
@@ -21,6 +21,9 @@ class PageIndicator extends StatelessWidget {
   final int count;
   final VoidCallback? onDotClicked;
   final Axis axis;
+
+  /// مدّة انتقال النقطة بين حالتَي الصغر والامتداد. `Duration.zero` تعني
+  /// انتقالاً فورياً بلا انيميشن.
   final Duration animationDuration;
   final double spacing;
   final double dotSize;
@@ -33,37 +36,48 @@ class PageIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isHorizontal = axis == Axis.horizontal;
-    final totalSize = (count - 1) * dotSize + (count - 1) * spacing + expandedSize;
+    // قائمة فارغة قادمة من الـ API حالة طبيعية لا استثنائية، وبلا هذا الحارس
+    // يصير totalSize سالباً مع قيم dotSize/spacing شائعة فترفضه BoxConstraints
+    if (count <= 0) return const SizedBox.shrink();
 
-    return SizedBox(
-      width: isHorizontal ? totalSize : null,
-      height: isHorizontal ? null : totalSize,
-      child: Flex(
-        direction: axis,
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          for (int i = 0; i < count; i++) ...[
-            _Dot(
-              index: i,
-              controller: controller,
-              isHorizontal: isHorizontal,
-              dotSize: dotSize,
-              expandedSize: expandedSize,
-              dotColor: dotColor,
-              activeDotColor: activeDotColor,
-              animationDuration: animationDuration,
-              fillPreviousDots: fillPreviousDots,
-              onTap: onDotClicked,
-            ),
-            if (i < count - 1)
-              SizedBox(
-                width: isHorizontal ? spacing : 0,
-                height: isHorizontal ? 0 : spacing,
+    final isHorizontal = axis == Axis.horizontal;
+    final totalSize = (count - 1) * (dotSize + spacing) + expandedSize;
+
+    // `totalSize` يكبر خطّياً مع `count`، فمع عددٍ كبير من الصفحات يتجاوز
+    // المساحة المتاحة فيرمي `Flex` خطأ RenderFlex overflow ويقطع شريط النقاط.
+    // `BoxFit.scaleDown` يصغّر الشريط كلّه إلى ما يسع — ولا أثر له إطلاقاً حين
+    // يتّسع المكان (المقياس 1)، فالأحجام المعتادة تبقى كما هي بالضبط.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: SizedBox(
+        width: isHorizontal ? totalSize : null,
+        height: isHorizontal ? null : totalSize,
+        child: Flex(
+          direction: axis,
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int i = 0; i < count; i++) ...[
+              _Dot(
+                index: i,
+                controller: controller,
+                isHorizontal: isHorizontal,
+                dotSize: dotSize,
+                expandedSize: expandedSize,
+                dotColor: dotColor,
+                activeDotColor: activeDotColor,
+                animationDuration: animationDuration,
+                fillPreviousDots: fillPreviousDots,
+                onTap: onDotClicked,
               ),
+              if (i < count - 1)
+                SizedBox(
+                  width: isHorizontal ? spacing : 0,
+                  height: isHorizontal ? 0 : spacing,
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -109,7 +123,7 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: widget.animationDuration,
     );
 
     _animation = CurvedAnimation(
@@ -117,11 +131,25 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
       curve: Curves.easeInOut,
     );
 
-    _currentPage = widget.controller.initialPage.toDouble();
+    // `initialPage` قيمة المُنشئ لا الصفحة المعروضة فعلاً. فلو رُكّب المؤشّر
+    // بعد أن تحرّك الـPageView — إظهارٌ مشروط، تبديل تبويب يعيد بناء الشجرة،
+    // أو استئناف شاشة محفوظة بـPageStorage — لبدأت النقطة الأولى نشطةً
+    // وممتدّةً والمستخدم على صفحةٍ أخرى، ولا يُصحَّح ذلك أبداً لأنّ
+    // `_onPageScroll` لا يُستدعى إلا عند تمريرٍ فعليّ. فنقرأ الموضع الحقيقي
+    // متى كان المتحكّم مرتبطاً، ونسقط إلى `initialPage` قبل الارتباط.
+    _currentPage = widget.controller.hasClients
+        ? (widget.controller.page ?? widget.controller.initialPage.toDouble())
+        : widget.controller.initialPage.toDouble();
     _targetValue = _calculateTargetValue(_currentPage);
     _controller.value = _targetValue;
 
     widget.controller.addListener(_onPageScroll);
+
+    // حين يُبنى المؤشّر مع الـPageView في الإطار نفسه لا يكون المتحكّم مرتبطاً
+    // بعدُ في initState، فنعيد القراءة مرّةً بعد أوّل إطار لضبط الحالة الأولى
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _onPageScroll();
+    });
   }
 
   double _calculateTargetValue(double currentPage) {
@@ -136,7 +164,16 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
     final newTarget = _calculateTargetValue(currentPage);
 
     if (_currentPage != currentPage) {
-      _currentPage = currentPage;
+      // اللون المعبّأ يقرأ floor(_currentPage) في build، وإعادة البناء الوحيدة
+      // تأتي من AnimatedBuilder الذي لا يتحرّك حين يبقى هدف هذه النقطة كما هو
+      // (قفزة بعيدة مثلاً)، فنطلب البناء صراحةً عند تغيّر الصفحة الصحيحة
+      if (mounted &&
+          widget.fillPreviousDots &&
+          _currentPage.floor() != currentPage.floor()) {
+        setState(() => _currentPage = currentPage);
+      } else {
+        _currentPage = currentPage;
+      }
     }
 
     if ((_targetValue - newTarget).abs() > 0.01) {
@@ -151,6 +188,11 @@ class _DotState extends State<_Dot> with SingleTickerProviderStateMixin {
     if (oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onPageScroll);
       widget.controller.addListener(_onPageScroll);
+    }
+    // المدّة تُقرأ مرّةً عند الإنشاء، فتغييرها بعد التركيب (ثيمٌ متحرّك، أو
+    // إطفاء الانيميشن عند تفضيل تقليل الحركة) يلزمه تحديث المتحكّم صراحةً.
+    if (oldWidget.animationDuration != widget.animationDuration) {
+      _controller.duration = widget.animationDuration;
     }
   }
 

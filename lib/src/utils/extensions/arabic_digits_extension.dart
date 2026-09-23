@@ -18,6 +18,27 @@ extension ArabicDigitsString on String {
     }
     return buffer.toString();
   }
+
+  /// الاتجاه العكسي: يُعيد كلّ رقمٍ عربي-هنديّ (٠-٩) أو فارسيّ ممتدّ (۰-۹) إلى
+  /// نظيره اللاتيني، ويترك سواه كما هو.
+  ///
+  /// لازمٌ لما يكتبه المستخدم بلوحةٍ عربية: «٥٠٠» لا يمرّ على `int.parse` ولا
+  /// على تحقّق الهاتف ولا على تنسيق المبلغ ما لم يُعَد لاتينياً أولاً. والنطاق
+  /// الفارسيّ مشمولٌ هنا وحده — لا في الاتجاه الطالع — لأنّ المُدخَل قد يأتي
+  /// بأيّ اللوحتين، بينما الإخراج يلزمه شكلٌ واحدٌ مُحدَّد.
+  String get toLatinDigits {
+    final StringBuffer buffer = StringBuffer();
+    for (final int unit in runes) {
+      if (unit >= 0x0660 && unit <= 0x0669) {
+        buffer.writeCharCode(0x30 + (unit - 0x0660));
+      } else if (unit >= 0x06F0 && unit <= 0x06F9) {
+        buffer.writeCharCode(0x30 + (unit - 0x06F0));
+      } else {
+        buffer.writeCharCode(unit);
+      }
+    }
+    return buffer.toString();
+  }
 }
 
 extension ArabicDigitsInt on int {

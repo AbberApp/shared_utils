@@ -4,10 +4,15 @@ import 'package:skeletonizer/skeletonizer.dart';
 /// Widget يعرض تأثير skeleton أثناء التحميل.
 ///
 /// [shimmerBaseColor] — لون shimmer الأساسي. إذا لم يُمرَّر يستخدم
-/// `colorScheme.onSurface` بشفافية منخفضة.
+/// `colorScheme.surfaceTint` كما هو، بلا شفافية.
 ///
-/// [containersColor] — لون خلفية الـ containers عند [ignoreContainers].
-/// إذا لم يُمرَّر يستخدم `colorScheme.surface`.
+/// تنبيه: `surfaceTint` مشتقٌّ من اللون الأساسي ومنخفض التباين في Material 3،
+/// فقد يبدو الـ shimmer شبه غير مرئيّ على خلفية فاتحة. مرِّر لوناً صريحاً
+/// (مثل `AppColors.of(context).muted`) حين تريده أوضح.
+///
+/// [containersColor] — لون خلفية الـ containers. يُطبَّق فقط حين يكون
+/// [ignoreContainers] بقيمة `false`، إذ لا تُرسم الحاويات أصلاً عند تجاهلها.
+/// إذا لم يُمرَّر تبقى الحاويات بألوانها الفعلية.
 class SkeletonizerWidget extends StatelessWidget {
   const SkeletonizerWidget({
     super.key,
@@ -32,9 +37,9 @@ class SkeletonizerWidget extends StatelessWidget {
       justifyMultiLineText: true,
       ignoreContainers: ignoreContainers,
       ignorePointers: true,
-      containersColor: ignoreContainers
-          ? (containersColor ?? colorScheme.surface)
-          : null,
+      // الحزمة لا تقرأ containersColor إلا في فرع `!ignoreContainers`، لذا
+      // يُمرَّر كما هو: يُطبَّق حين تُرسم الحاويات، ويُتجاهَل تلقائياً حين لا تُرسم.
+      containersColor: containersColor,
       effect: ShimmerEffect(
         baseColor: shimmerBaseColor ?? colorScheme.surfaceTint,
         duration: const Duration(milliseconds: 900),

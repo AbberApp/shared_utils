@@ -20,7 +20,12 @@ class UpperCaseEnglishFormatter extends TextInputFormatter {
     final filtered = newValue.text.replaceAll(RegExp(r'[^A-Za-z0-9]'), '');
     final upperCased = filtered.toUpperCase();
 
-    return newValue.copyWith(
+    // قيمة جديدة لا `newValue.copyWith`: التصفية تُقصّر النصّ كلّما رُشِّح
+    // محرف، و`copyWith` كان يُبقي `composing` المحسوب على النصّ الأطول.
+    // مع لوحةٍ عربية يصير النصّ المصفّى فارغاً بينما مدى التأليف يشير إلى
+    // محارف لم تعد موجودة، فيسقط تأكيد `isComposingRangeValid` في
+    // controller وفي `toJSON`. البناء المباشر يُولّد `composing` فارغاً.
+    return TextEditingValue(
       text: upperCased,
       selection: TextSelection.collapsed(offset: upperCased.length),
     );

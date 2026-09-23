@@ -9,8 +9,12 @@ dependencies:
   shared_utils:
     git:
       url: https://github.com/AbberApp/shared_utils.git
-      ref: main
+      ref: stable
 ```
+
+> `stable` هو الفرع **الوحيد** في المستودع ولا وسوم فيه. أيّ `ref` آخر —
+> و`main` أوّلها — يفشل عند `flutter pub get` برسالةٍ غامضة تُضيّع وقتاً قبل
+> أن تُفهم. القاعدة مذكورة في [`CLAUDE.md`](CLAUDE.md).
 
 ## الاستيراد
 
@@ -25,31 +29,33 @@ import 'package:shared_utils/shared_utils.dart';
 
 ```
 lib/src/
-├── network/          # الشبكة والـ API
-│   ├── api/          # ApiConsumer, DioConsumer, ErrorHandler, ResponseHandler
-│   ├── connectivity/ # ConnectionStatus
-│   └── models/       # Failure, ResponseCode, ResponseMessage
-├── realtime/         # الاتصال الفوري
-│   ├── socket/       # SocketManager, SocketRegistry
-│   ├── sse/          # SseManager, SseRegistry
-│   └── agora/
-│       ├── call/     # AgoraCallService, MicrophoneService, SpeakerService
-│       └── live/     # AgoraLiveService
-├── ui/               # واجهة المستخدم
-│   ├── widgets/      # Toast, PageIndicator, ResponsiveGridView, Skeletonizer, LoadMore, PaginatedListView
-│   └── formatters/   # NumberFormatter, CardFormatter, TextFormatter, PhoneFormatter
-├── utils/            # أدوات مساعدة
-│   ├── extensions/   # DateFormatExtension, StringExtension, CurrencyExtension
-│   ├── phone/        # IntlPhoneUtils
+├── network/            # الشبكة والـ API
+│   ├── api/            # ApiConsumer, DioConsumer
+│   │   ├── handlers/   # ErrorHandler, ResponseHandler
+│   │   └── models/     # Failure, ResponseCode, ResponseMessage
+│   └── connectivity/   # ConnectionStatus
+├── realtime/           # الاتصال الفوري
+│   ├── socket/         # SocketManager, SocketRegistry
+│   └── sse/            # SseManager, SseRegistry
+├── state/              # SafeBloc, SafeCubit — حرّاس دورة حياة البلوك
+├── ui/                 # واجهة المستخدم
+│   ├── widgets/        # Toast, PageIndicator, ResponsiveGridView, Skeletonizer, LoadMore, PaginatedListView
+│   ├── formatters/     # NumberFormatter, CardFormatter, TextFormatter, PhoneFormatter, IbanFormatter
+│   └── forms/          # FieldErrors
+├── utils/              # أدوات مساعدة
+│   ├── extensions/     # DateFormatExtension, StringExtension, CurrencyExtension, ArabicDigitsExtension
+│   ├── phone/          # IntlPhoneUtils
 │   ├── helpers.dart
 │   ├── delay_handler.dart
 │   └── parse_to_map.dart
-├── services/         # الخدمات
-│   ├── cache/        # FileCacheManager
-│   ├── update/       # AppUpdateChecker
-│   └── pickers/      # FilePickerManager, ImagePickerManager
-├── device/           # معلومات الجهاز — DeviceInfoManager, DeviceInfoModel
-└── data/             # base_entity.dart — BaseEntity
+├── services/           # الخدمات
+│   ├── cache/          # FileCacheManager, FileNoLongerAvailableException
+│   ├── update/         # AppUpdateChecker, AppReleaseInfo, OptionalUpdateBanner, GuardedNavigator
+│   ├── monitoring/     # SentryBootstrap, SentryNoiseFilter
+│   ├── audio/          # AudioSessionConfig
+│   └── pickers/        # FilePickerManager, ImagePickerManager
+├── device/             # معلومات الجهاز — DeviceInfoManager, SharedDeviceInfo
+└── data/               # base_entity.dart — BaseEntity
 ```
 
 ---
@@ -85,7 +91,6 @@ class BaseOrderModel extends BaseEntity<OrderModel> {
   BaseOrderModel({
     required super.count,
     required super.next,
-    required super.previous,
     required super.results,
   });
 
@@ -93,7 +98,7 @@ class BaseOrderModel extends BaseEntity<OrderModel> {
       _$BaseOrderModelFromJson(json);
 
   factory BaseOrderModel.empty() =>
-      BaseOrderModel(count: 0, next: '', previous: '', results: []);
+      BaseOrderModel(count: 0, next: '', results: []);
 }
 
 // استخدام في الـ Bloc
@@ -107,9 +112,13 @@ if (orders.canLoadMore) {
   // fetch next page
 }
 
-// دمج بدون تكرار
-orders.merge(newData, key: (order) => order.id);
+// دمج بدون تكرار — الوسيط الثاني موضعيّ لا مُسمّى
+orders.merge(newData, (order) => order.id);
 ```
+
+> لا تُضف `previous` إلى نماذجك: أُضيف مرّةً إلى `BaseEntity` ثمّ سُحب عمداً
+> (راجع 2.12.1 في [`CHANGELOG.md`](CHANGELOG.md)) — المكتبة تضع المعيار
+> والمشاريع تلتزم به، والحقل لم يكن يخدم إلّا تطبيقاً واحداً.
 
 **Properties:**
 | Property | النوع | الوصف |
@@ -120,7 +129,13 @@ orders.merge(newData, key: (order) => order.id);
 | `hasNext` | `bool` | هل توجد صفحة تالية |
 | `canLoadMore` | `bool` | هل يمكن التحميل |
 | `isEmpty` | `bool` | هل القائمة فارغة |
-| `nextOffset` | `int` | الـ offset التالي |
+| `isNotEmpty` | `bool` | هل القائمة تحتوي بيانات |
+| `length` | `int` | عدد العناصر المحملة |
+| `nextOffset` | `int?` | الـ offset التالي |
+
+> `nextOffset` يُعيد `null` في ثلاث حالات: لا صفحة تالية (`hasNext == false`)،
+> أو `next` بلا معامل `offset`، أو تعذّر تحليل الرابط. فلا تكتب
+> `orders.nextOffset!` — آخر صفحة تُسقط التطبيق.
 
 ---
 
@@ -146,6 +161,38 @@ _connectionStatus.connectionStream.listen((state) {
   }
 });
 ```
+
+### handleResponse و handleJsonResponse
+
+معالجا الاستجابة: كلاهما يفحص كود الحالة، ويرفض صفحات HTML، ويحوّل الجسم
+الفارغ إلى `{}`، ويرمي `DioException` يقرؤها `ErrorHandler`. الفرق في
+المُخرَج وحده.
+
+```dart
+// نقطة نهاية عقدُها كائن JSON — استخدم الصارمة
+final Response response = await _apiConsumer.get(EndPoints.order);
+return OrderModel.fromJson(handleJsonResponse(response)); // Map<String, dynamic>
+
+// جسمٌ نصّيٌّ مقصود (تقرير، رسالة، CSV، رمز تحقّق) — استخدم العامّة
+final String code = handleResponse(await _apiConsumer.post(EndPoints.otp));
+
+// قائمة JSON في الجذر (بلا غلاف pagination) — العامّة كذلك
+final List<dynamic> raw = handleResponse(response);
+return raw.map((e) => TagModel.fromJson(e)).toList();
+```
+
+| | `handleJsonResponse` | `handleResponse` |
+|---|---|---|
+| المُخرَج | `Map<String, dynamic>` | `dynamic` — خريطة أو قائمة أو نصّ خام |
+| جسمٌ ليس كائن JSON | `DioException` بمسار الطلب ومقتطفٍ من الجسم | يُعاد خاماً كما وصل |
+| 204 والجسم الفارغ | `{}` | `{}` — و204 رسالة حذفٍ عربية للعرض |
+| متى | كلّ `Model.fromJson` | النصّ الخام، أو قائمة في الجذر |
+
+> `handleResponse` يُعيد النصّ الخام حين يفشل فكّ JSON — وهذا عقدٌ مقصود
+> تعتمد عليه نقاط النهاية النصّية. لكنّه حين يُمرَّر إلى `Model.fromJson`
+> ينفجر بـ`TypeError: String is not a subtype of Map` داخل النموذج، بلا
+> ذكرٍ للمسار ولا لما ردّه الخادم. `handleJsonResponse` يوقف ذلك عند حدّ
+> الشبكة برسالةٍ تدلّ على السبب.
 
 ### ErrorHandler
 
@@ -195,14 +242,27 @@ ErrorType.internalServerError.toFailure()
 ```dart
 final date = DateTime.now();
 
-date.toWhatsAppStyle      // "اليوم" | "أمس" | "الاثنين" | "١٢ مارس ٢٠٢٦"
+date.toWhatsAppStyle      // "اليوم" | "أمس" | "الاثنين" | "٢٠٢٦/٠٣/١٢"
 date.toChatMessageTime    // "٩:٣٠ م"
 date.toChatHeaderDate     // "١٢ مارس ٢٠٢٦"
 date.toFullDateTime       // "مارس ١٢، ٢٠٢٦، ٩:٣٠ م"
+date.toShortDateTime      // "٩:٣٠" اليوم | "٩:٣٠ ٠٣/١٢" هذه السنة | "٩:٣٠ ٢٠٢٥/٠٣/١٢"
 date.toDateString         // "2026-03-12"
 date.toDayMonth           // "١٢ مارس"
-date.toTimeAgo            // "منذ دقيقتين" | "منذ ساعة واحدة" | "منذ ٣ أيام"
+date.toTimeAgo            // مضغوط: "الآن" | "45 ث" | "12 د" | "3 س و 20 د" | "5 ي و 2 س"
+date.toTimeAgoArabic      // كامل: "منذ دقيقتين" | "منذ ساعة" | "منذ ٣ أيام"
 date.toAge                // 25
+```
+
+> `toTimeAgo` و`toTimeAgoArabic` ليستا مترادفتين: الأولى صيغة مضغوطة بلا كلمة
+> «منذ» تصلح لطابع زمنيّ بجانب رسالة، والثانية الصيغة العربية الكاملة. إن طلب
+> التصميم «منذ دقيقتين» فالمطلوب `toTimeAgoArabic`.
+
+### DateStringExtension على String
+
+```dart
+'25'.ageToBirthDate       // تاريخ ميلادٍ يوافق 25 سنة اليوم، بصيغة "yyyy-MM-dd"
+                          // ويُعيد النصّ كما هو إن لم يكن رقماً
 ```
 
 ### CurrencyExtension على double/int
@@ -294,6 +354,25 @@ TextField(
 )
 ```
 
+### IbanFormatter و IbanUtils
+
+```dart
+// حقل الإدخال — أحرف كبيرة، مسافة كل 4 محارف، وحدٌّ أقصى بحسب رمز الدولة
+TextFormField(
+  inputFormatters: [IbanFormatter()],
+)
+
+// التحقق والتنسيق
+IbanUtils.isValid('SA44 2000 0001 2345 6789 1234'); // الطول + MOD 97
+IbanUtils.format('SA4420000001234567891234');        // "SA44 2000 0001 ..."
+IbanUtils.strip('SA44 2000 0001 ...');               // للإرسال للـ API
+IbanUtils.isSupportedCountry('SA');                  // true
+IbanUtils.expectedLength('SA');                      // 24 — null إن لم تُدعم
+```
+
+> ❌ لا تكتب تحقّق IBAN مخصّصاً. الجدول هنا يغطّي أطوال ISO 13616 لـ 93 دولة
+> مع `MOD 97` وفق ISO 7064 — وأي نسخة يدوية ستتخلّف عنه.
+
 ---
 
 ## Pickers
@@ -364,8 +443,24 @@ info.persistentId       // "A1B2C3..." (يبقى ثابتاً حتى بعد إع
 
 // إرساله في الـ headers
 final headers = info.toFlatMap();
-// → {app_name: ..., app_version: ..., device_model: ..., os_name: ...}
+// → persistent_id
+//   app_version, app_build, app_full_version, app_package
+//   device_id, device_brand, device_model, device_name, device_type,
+//   device_is_physical
+//   os_name, os_version, platform, locale, timezone
+//   screen_width, screen_height, screen_pixel_ratio
 ```
+
+> `app_name` مستثنى عمداً من الخريطة المسطّحة: اسم التطبيق قد يحمل مسافات أو
+> أحرفاً خاصّة لا تصلح في ترويسة HTTP. من احتاجه فليقرأه من `info.app.name`
+> أو من `info.toJson()`.
+
+### أسماء النماذج
+
+`info` من نوع `SharedDeviceInfo`، وحقوله من `SharedAppInfo` و`SharedDeviceDetails`
+و`SharedSystemInfo` و`SharedScreenInfo`. البادئة `Shared` مقصودة: هذه الأصناف
+تُصدَّر بلا نطاق، والأسماء العامّة (`DeviceInfoModel`, `AppInfo`, `DeviceDetails`,
+`SystemInfo`, `ScreenInfo`) كانت تصطدم بأصناف المشاريع فتُحجب بلا خطأ ترجمة.
 
 ---
 
@@ -411,14 +506,37 @@ FileCacheManager.init(
   deleteKey: (key) => storage.delete(key),
 );
 
-// استخدام — يحمّل ويخزن تلقائياً
-final String? filePath = await FileCacheManager.instance.saveAndGetFile(url);
+// استخدام — يحمّل ويخزن تلقائياً (أعضاء نسخة: عبر .instance)
+final File file = await FileCacheManager.instance.saveAndGetFile(url);
+
+// دليل فرعيّ آخر داخل مجلّد المستندات (الافتراضي 'audio_cache')
+final File doc = await FileCacheManager.instance.saveAndGetFile(
+  url,
+  fileCache: 'documents_cache',
+);
 
 // حذف من الـ cache
-FileCacheManager.deleteFileCache(url);
+FileCacheManager.instance.deleteFileCache(url);
 
-// نوع الـ MIME
-FileCacheManager.getFileMimeType('file.pdf'); // 'application/pdf'
+// أعضاء ساكنة — لا تمرّ بـ .instance
+FileCacheManager.getFileType('a/b/file.pdf');    // 'pdf'
+FileCacheManager.getFileMimeType('file.pdf');    // 'application/pdf'
+```
+
+> `saveAndGetFile` **ترمي ولا تُعيد `null`** — فلا معنى لـ `String?` ولا لفحص
+> العدم. والتقط `FileNoLongerAvailableException` على حدة: مُخزّن الوسائط يردّ
+> 403 أو 404 على محتوىً ذهب، وهو لا يُصلَح بإعادة المحاولة ولا يستحقّ الذهاب
+> إلى تتبّع الأخطاء — اعرض «لم يعد متاحاً» بدل خطأٍ عامّ.
+
+```dart
+try {
+  final File file = await FileCacheManager.instance.saveAndGetFile(url);
+  // ...
+} on FileNoLongerAvailableException catch (_) {
+  showToast('الملف لم يعد متاحاً');
+} on Exception catch (e) {
+  showToast(ErrorHandler.handle(e).failure.displayMessage);
+}
 ```
 
 ### AppUpdateChecker
@@ -427,17 +545,30 @@ FileCacheManager.getFileMimeType('file.pdf'); // 'application/pdf'
 // في شاشة الـ Splash
 await AppUpdateChecker.instance.checkForUpdate(
   appStoreId: '123456789', // App Store ID للـ iOS
-  onUpdateAvailable: () {
-    showUpdateDialog(context);
+  // isMandatory: true عند تغيّر major/minor، false عند patch.
+  // info: تفاصيل الإصدار من المتجر — null إن تعذّر جلبها، فلا تفترض وجودها.
+  onUpdateAvailable: (bool isMandatory, [AppReleaseInfo? info]) {
+    showUpdateDialog(
+      context,
+      isMandatory: isMandatory,
+      notes: info?.noteLines ?? const <String>[], // «ما الجديد» جاهزة كنقاط
+    );
   },
   onError: (error) {
     debugPrint('Update check failed: $error');
   },
 );
 
+// جلب تفاصيل الإصدار وحدها — بلا مقارنة ولا شرط تحديث
+final AppReleaseInfo? release =
+    await AppUpdateChecker.instance.fetchReleaseInfo('123456789');
+
 // تنفيذ التحديث الفوري (Android فقط)
 await AppUpdateChecker.instance.performImmediateUpdate();
 ```
+
+> ملاحظات الإصدار تُقرأ من iTunes Lookup وتُعرض على المنصّتين: Play لا يوفّر
+> واجهة عامّة لها. ويفشل جلبها بصمت فلا يعطّل تدفّق التحديث.
 
 ---
 
@@ -451,6 +582,8 @@ Widget يعرض تأثير shimmer أثناء التحميل، يلتف حول �
 SkeletonizerWidget(
   isLoading: isLoading,
   shimmerBaseColor: AppColors.of(context).muted,
+  // containersColor لا أثر له إلا مع ignoreContainers: true
+  ignoreContainers: true,
   containersColor: AppColors.of(context).background,
   child: YourWidget(),
 )
@@ -602,10 +735,16 @@ onChanged: (query) {
 ```dart
 await launchWhatsApp(
   phoneNumber: '+966500000000',
+  deviceInfo: DeviceInfoManager.instance,
   userId: '12345',
   message: 'مرحباً، أحتاج مساعدة',
 );
 ```
+
+> يجب أن يكون `DeviceInfoManager.instance.initialize()` قد نُفّذ في `main` قبل
+> هذا النداء: الدالّة تقرأ المعلومات عبر `infoOrNull` فلا ترمي إن غابت، لكن
+> نصّ الدعم الفنّي يخرج حينها بـ `null` في النظام ونسخة التطبيق — وهي الحقول
+> التي كُتبت الرسالة لأجلها.
 
 ### Helpers
 
@@ -619,4 +758,7 @@ convertArabicNumbers('١٢٣٤'); // "1234"
 
 ## الإصدار الحالي
 
-**v2.3.1** — متوافق مع Dart SDK ^3.9.2 و Flutter >=1.17.0
+الإصدار المعتمد هو ما في [`pubspec.yaml`](pubspec.yaml)، وسجلّ التغييرات في
+[`CHANGELOG.md`](CHANGELOG.md) — لا رقمٌ مكتوب هنا يدوياً يتخلّف عند كل نشر.
+
+متطلّبات البيئة: Dart SDK ‎^3.9.2‎ و Flutter ‎>=1.17.0‎.

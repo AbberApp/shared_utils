@@ -22,8 +22,10 @@ class ResponseCode {
   static const int serviceUnavailable = 503;
   static const int gatewayTimeout = 504;
 
-  // Custom error codes
-  static const int unknown = 301;
+  // Custom error codes — كلّها خارج مجال HTTP (‎≤ 0) كي لا تلتبس بكودٍ حقيقيّ
+  /// خطأ غير معروف. كانت 301 فتلتبس بـ HTTP 301 (Moved Permanently):
+  /// `Failure(code: 301)` لا يُميَّز أهو خطؤنا أم إعادة توجيهٍ من الخادم.
+  static const int unknown = -19;
   static const int connectTimeout = -11;
   static const int cancel = -12;
   static const int receiveTimeout = -13;
@@ -46,8 +48,33 @@ class ResponseCode {
   /// التحقق من خطأ الخادم
   static bool isServerError(int code) => code >= 500 && code < 600;
 
-  /// التحقق من استجابة HTML خاطئة
+  /// بادئتا وثيقة HTML. صفحات nginx و502 من الوسطاء تبدأ بـ`<html>` بلا
+  /// DOCTYPE، وكان الاكتفاء بالأولى يجعلها تعبر إلى `Model.fromJson` فتنفجر
+  /// هناك بـ«String is not a subtype of Map» بلا دلالةٍ على السبب.
+  static const List<String> _htmlPrefixes = <String>['<!doctype html', '<html'];
+
+  /// التحقق من أنّ جسم الاستجابة وثيقةُ HTML لا بيانات
+  ///
+  /// السؤال المطروح: «هل **يبدأ** الجسم بوثيقة HTML؟» لا «هل يذكرها في
+  /// موضعٍ ما؟». والفرق ليس تجميلاً: البحث في أيّ موضع يتّهم جسم JSON
+  /// سليماً يقتبس صفحة الخطأ في إحدى قيمه، فيُرمى 500 مكان رسالة الخادم
+  /// الحقيقية ويضيع سببُ الرفض على المستخدم.
+  ///
+  /// ويُشذَّب الفراغ البادئ أوّلاً — خوادم كثيرة تسبق الوثيقة بسطرٍ فارغ —
+  /// وتُقارَن البادئة بلا حساسيةٍ لحالة الأحرف، فـ`<!doctype html>` و
+  /// `<!DOCTYPE html>` سواءٌ في HTML.
+  ///
+  /// حدُّها المعروف: صفحةٌ تبدأ بـ`<html>` بلا `<!DOCTYPE>` — صفحاتُ nginx
+  /// لـ502 و504 مثلاً — لا تُكتشف هنا.
   static bool isBadHtmlResponse(String data) {
-    return data.contains('<!DOCTYPE html><html lang="en" dir="rtl"><head><title>خطأ');
+    final String head = data.trimLeft();
+    if (head.isEmpty) return false;
+    // المقارنة على بادئةٍ بطول القالب وحدها: صفحة الخطأ قد تبلغ مئات آلاف
+    // المحارف، ولا داعي لنسخها كلّها بـ`toLowerCase`.
+    for (final String prefix in _htmlPrefixes) {
+      if (head.length < prefix.length) continue;
+      if (head.substring(0, prefix.length).toLowerCase() == prefix) return true;
+    }
+    return false;
   }
 }

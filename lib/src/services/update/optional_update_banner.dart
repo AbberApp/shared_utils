@@ -9,7 +9,11 @@ class OptionalUpdateBanner {
 
   static OverlayEntry? _entry;
 
-  static bool get isShowing => _entry != null;
+  /// الـ[Overlay] الذي أُدرج فيه الشريط — نحتفظ به لأنّ هدمه (تسجيل خروج أو
+  /// إعادة بناء جذر التطبيق) يحدث بلا نداء [hide]، فيبقى المزلاج الساكن عالقًا.
+  static OverlayState? _host;
+
+  static bool get isShowing => _entry != null && _host?.mounted == true;
 
   static void show(
     BuildContext context, {
@@ -24,6 +28,9 @@ class OptionalUpdateBanner {
     bool showCloseButton = true,
     bool atTop = false,
   }) {
+    // مزلاجٌ عالقٌ من Overlay مهدوم يمنع ظهور الشريط للأبد → نظّفه قبل الفحص.
+    if (_entry != null && _host?.mounted != true) hide();
+
     // Prefer an explicit OverlayState (e.g. navigatorKey.currentState.overlay):
     // a bare navigatorKey.currentContext has NO Overlay ancestor, so
     // Overlay.maybeOf(context) returns null and the banner never shows.
@@ -45,12 +52,19 @@ class OptionalUpdateBanner {
         atTop: atTop,
       ),
     );
+    _host = overlay;
     overlay.insert(_entry!);
   }
 
   static void hide() {
-    _entry?.remove();
+    final OverlayEntry? entry = _entry;
+    // صفِّر الحالة أوّلًا: onClose يستدعي hide من داخل شجرة الشريط نفسه.
     _entry = null;
+    _host = null;
+    if (entry == null) return;
+    entry.remove();
+    // OverlayEntry يملك ValueNotifier داخليًّا لا يتحرّر إلّا بـ dispose.
+    entry.dispose();
   }
 }
 

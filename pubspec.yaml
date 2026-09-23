@@ -1,13 +1,16 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 2.18.1
+version: 3.0.0
 
 homepage: https://github.com/AbberApp/shared_utils
 
 environment:
-  sdk: ^3.9.2
-  flutter: ">=1.17.0"
+  # الحدّان يعكسان ما تفرضه التبعيات فعلاً (in_app_update و fluttertoast)، لا قيمة
+  # `flutter create` الافتراضيّة: حدٌّ أدنى كاذب يجعل pub يفشل باسم تبعيةٍ أخرى
+  # بدل أن يقول إنّ المكتبة نفسها تحتاج أحدث. راجعهما كلّما رُفعت تبعيةٌ بحدٍّ أعلى.
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
 
 dependencies:
   flutter:
@@ -15,7 +18,7 @@ dependencies:
 
   # Network
   audio_session: ^0.2.4
-  sentry_flutter: ^9.30.0
+  sentry_flutter: ^9.30.1
   bloc: ^9.2.1
   dio: ^5.11.1
   connectivity_plus: ^7.3.1
@@ -34,7 +37,9 @@ dependencies:
   path_provider: ^2.1.6
 
   # Utils
-  intl: ^0.20.3
+  # 0.20.2 لا 0.20.3: flutter_localizations يثبّت intl بنسخةٍ واحدة بالضبط (0.20.2)
+  # حتى Flutter 3.44.x، فرفعُ الحدّ يُفشل حلّ التبعيات عند كلّ مستهلكٍ يُترجم واجهته.
+  intl: ^0.20.2
   phone_numbers_parser: ^9.0.26
   url_launcher: ^6.3.2
   share_plus: ^13.3.0
@@ -51,12 +56,17 @@ dependencies:
   in_app_update: ^5.0.0
   json_annotation: ^4.12.0
 
-  # مستورد مباشرةً في app_update_checker.dart (@immutable)
-  meta: ^1.19.0
+  # مستورد مباشرةً في app_update_checker.dart (@visibleForTesting)
+  # حدٌّ ثابت لا يلاحق أحدث نسخة: إطار Flutter يثبّت meta بنسخةٍ مضبوطة (1.18.0 في
+  # 3.44.x)، فقيد caret على 1.19.0 يُفشل الحلّ عند المستهلكين بلا مقابل.
+  meta: ">=1.18.0 <2.0.0"
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # محاكاة للاختبارات: طبقتا الشبكة والأجهزة تعتمدان على plugins لا تعمل
+  # في بيئة الاختبار، فبدون محاكاة تبقيان خارج التغطية تماماً.
+  mocktail: ^1.0.5
 
 flutter:

@@ -19,8 +19,14 @@ final Response response = await _apiConsumer.post(url, body: data);
 final Response response = await _apiConsumer.patch(url, body: data);
 final Response response = await _apiConsumer.delete(url);
 
-// handleResponse — معالج الاستجابة (استخدمه دائماً)
-return Model.fromJson(handleResponse(response));
+// handleJsonResponse — كائن JSON مضمون (استخدمه مع fromJson)
+return Model.fromJson(handleJsonResponse(response));
+
+// handleResponse — الجسم كما وصل: نصّ أو قائمة أو خريطة
+final String report = handleResponse(response); // تقرير، رسالة، CSV، رمز تحقّق
+final List<dynamic> items = handleResponse(response); // قائمة JSON في الجذر
+// ❌ ممنوع: Model.fromJson(handleResponse(r)) — نصّ الخادم يصل fromJson
+//    فينفجر بـ«String is not a subtype of Map» بلا دلالة على السبب
 
 // ConnectionStatus — فحص الاتصال
 final ConnectionStatus _connectionStatus;
@@ -68,6 +74,8 @@ base.merge(newData, (i) => i.id)  // دمج مع تجنب التكرار
 SkeletonizerWidget(
   isLoading: isLoading,
   shimmerBaseColor: AppColors.of(context).muted,
+  // containersColor لا أثر له إلا مع ignoreContainers: true
+  ignoreContainers: true,
   containersColor: AppColors.of(context).background,
   child: YourWidget(),
 )
@@ -89,6 +97,8 @@ ScrollController()..addListener(() {
   LoadMoreWidget.onScroll(
     controller: _scrollController,
     base: _bloc.items,
+    // إلزاميّ في التوقيع الحالي لكنّه لا يُقرأ: القرار مبنيّ على base وموضع
+    // التمرير وحدهما. لا تتوقّع أن تُراعى فلاترُك هنا — رشّحها في الـ Bloc.
     filters: _bloc.filters,
     isLoadMore: _bloc.state is LoadMoreLoadingState,
     onLoadMore: () => _bloc.add(const LoadMoreEvent()),
@@ -114,6 +124,8 @@ PaginatedListView<FeatureModel>(
 SkeletonizerWidget(
   isLoading: isLoading,
   shimmerBaseColor: AppColors.of(context).muted,
+  // containersColor لا أثر له إلا مع ignoreContainers: true
+  ignoreContainers: true,
   containersColor: AppColors.of(context).background,
   child: RefreshIndicator(
     onRefresh: () async => _bloc.add(const FetchEvent()),
@@ -203,8 +215,16 @@ SocketManager(
 )
 // ❌ ممنوع: WebSocket مخصص
 
-// SSEManager — Server-Sent Events
-// استخدمه بدل أي SSE implementation مخصص
+// SseManager — Server-Sent Events
+SseManager(
+  url,
+  headersBuilder: () => {'Authorization': 'Token ${token}'},
+  queryParametersBuilder: () => {'last_event_id': lastId},
+  // يُستدعى عند 401 — أعِد true إن نجح تجديد التوكن فيُعاد الاتصال تلقائياً،
+  // أو false فيقطع SseManager بدل حلقة إعادة اتصالٍ مرفوضة.
+  onUnauthorized: () async => await refreshToken(),
+)
+// ❌ ممنوع: SSE implementation مخصص
 ```
 
 ### Utils
@@ -223,7 +243,13 @@ _delay.run(() => _bloc.add(SearchEvent(query)));
 // dispose في dispose()
 
 // AppUpdateChecker
-AppUpdateChecker.instance.updateRequired // bool
+await AppUpdateChecker.instance.checkForUpdate(
+  appStoreId: '123456789',
+  onUpdateAvailable: (bool isMandatory, [AppReleaseInfo? info]) {
+    // isMandatory: true عند تغيّر major/minor، false عند patch
+  },
+  onError: (error) {},
+);
 
 // DeviceInfoManager
 DeviceInfoManager deviceInfo;

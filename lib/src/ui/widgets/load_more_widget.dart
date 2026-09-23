@@ -48,12 +48,19 @@ class LoadMoreWidget extends StatelessWidget {
     }
   }
 
+  /// يفحص موضع التمرير ويُطلق [onLoadMore] عند الاقتراب من نهاية القائمة.
+  ///
+  /// [filters] لا يُقرأ هنا ولا يُعدَّل: تقديم الصفحة (`offset`) مملوكٌ للمستدعي
+  /// وحده — يزيده في معالج LoadMore ويتراجع عنه عند الفشل. لو حدّثته الدالة هنا
+  /// أيضاً لتقدّمت الصفحة مرّتين وسقطت صفحة كاملة بلا أثر. بقي الوسيط مقبولاً
+  /// (اختيارياً) كي لا تنكسر النداءات القائمة، ولم يعد إلزامياً كي لا يوحي بأن
+  /// الدالة تتكفّل بالترقيم.
   static void onScroll({
     required ScrollController controller,
     required BaseEntity base,
-    required Map<String, dynamic> filters,
     required bool isLoadMore,
     required Function onLoadMore,
+    Map<String, dynamic>? filters,
     double offsetFromBottom = 200.0,
   }) {
     if (!controller.hasClients) return;

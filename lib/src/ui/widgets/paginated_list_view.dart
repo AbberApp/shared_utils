@@ -27,7 +27,9 @@ class PaginatedListView<T> extends StatefulWidget {
     this.shimmerContainersColor,
     this.loadMoreIndicatorColor,
     this.loadMoreBackgroundColor,
-  });
+    this.skeletonItemCount = 6,
+    this.skeletonItemBuilder,
+  }) : assert(skeletonItemCount >= 0, 'skeletonItemCount لا يكون سالباً');
 
   final List<T> items;
 
@@ -53,9 +55,18 @@ class PaginatedListView<T> extends StatefulWidget {
   /// [ScrollController] خارجي اختياري — إذا لم يُمرَّر يُنشأ داخلياً
   final ScrollController? scrollController;
 
+  // ─── الـ Skeleton ────────────────────────────────────────────────────────
+
+  /// عدد العناصر الوهمية المرسومة أثناء التحميل الأولي حين تكون [items] فارغة
+  final int skeletonItemCount;
+
+  /// شكل العنصر الوهمي أثناء التحميل الأولي — إذا لم يُمرَّر يُستخدم شكل
+  /// محايد جاهز. مرّره ليطابق الهيكل شكل البطاقة الحقيقية
+  final Widget Function(BuildContext context)? skeletonItemBuilder;
+
   // ─── ألوان اختيارية ──────────────────────────────────────────────────────
 
-  /// لون shimmer الأساسي — يعتمد على `colorScheme.onSurface` إذا لم يُمرَّر
+  /// لون shimmer الأساسي — يعتمد على `colorScheme.surfaceTint` إذا لم يُمرَّر
   final Color? shimmerBaseColor;
 
   /// لون خلفية الـ containers في skeleton — يعتمد على `colorScheme.surface`
@@ -64,7 +75,7 @@ class PaginatedListView<T> extends StatefulWidget {
   /// لون مؤشر تحميل المزيد — يعتمد على `colorScheme.primary`
   final Color? loadMoreIndicatorColor;
 
-  /// لون خلفية مؤشر تحميل المزيد — يعتمد على `colorScheme.surfaceContainerHighest`
+  /// لون خلفية مؤشر تحميل المزيد — يعتمد على `colorScheme.secondary`
   final Color? loadMoreBackgroundColor;
 
   @override
@@ -72,18 +83,44 @@ class PaginatedListView<T> extends StatefulWidget {
 }
 
 class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
-  late final ScrollController _scrollController;
+  static const double _loadMoreOffset = 200.0;
+
+  late ScrollController _scrollController;
   bool _ownsController = false;
+
+  /// يمنع إطلاق [PaginatedListView.onLoadMore] مرّات متتالية من أحداث التمرير
+  /// قبل أن ينعكس الطلب في الحالة. يُخفَض حالما يخرج المستخدم من منطقة العتبة
+  /// أو تتغيّر البيانات، فلا يعلق أبداً في وضعٍ يمنع التحميل.
+  bool _loadMoreRequested = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.scrollController != null) {
-      _scrollController = widget.scrollController!;
-    } else {
-      _scrollController = ScrollController();
-      _ownsController = true;
+    _attachController(widget.scrollController);
+  }
+
+  @override
+  void didUpdateWidget(covariant PaginatedListView<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // الأب قد يستبدل المتحكّم عند إعادة البناء (تبديل تبويب أو تغيّر مفتاح)؛
+    // التمسّك بالقديم يترك القائمة مربوطة بمتحكّمٍ قد يتخلّص منه الأب.
+    if (oldWidget.scrollController != widget.scrollController) {
+      _scrollController.removeListener(_onScroll);
+      if (_ownsController) _scrollController.dispose();
+      _attachController(widget.scrollController);
     }
+
+    if (oldWidget.items.length != widget.items.length ||
+        oldWidget.isLoadMore != widget.isLoadMore ||
+        oldWidget.canLoadMore != widget.canLoadMore) {
+      _loadMoreRequested = false;
+    }
+  }
+
+  void _attachController(ScrollController? external) {
+    _ownsController = external == null;
+    _scrollController = external ?? ScrollController();
     _scrollController.addListener(_onScroll);
   }
 
@@ -96,47 +133,47 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
 
   void _onScroll() {
     if (!_scrollController.hasClients) return;
-    if (!widget.canLoadMore || widget.isLoadMore) return;
+
+    // isLoading أيضاً: أثناء التحديث (سحب للأسفل) تبقى القائمة معروضة وقابلة
+    // للتمرير، فينطلق طلب صفحةٍ تالية بالتوازي مع طلب الصفحة الأولى.
+    if (widget.isLoading || widget.isLoadMore || !widget.canLoadMore) return;
 
     final remaining =
         _scrollController.position.maxScrollExtent -
         _scrollController.position.pixels;
 
-    if (remaining <= 200.0) widget.onLoadMore();
+    if (remaining > _loadMoreOffset) {
+      _loadMoreRequested = false;
+      return;
+    }
+
+    if (_loadMoreRequested) return;
+    _loadMoreRequested = true;
+    widget.onLoadMore();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (widget.onRefresh != null) {
-      return RefreshIndicator(
-        onRefresh: widget.onRefresh!,
-        child: _PaginatedListContent<T>(
-          scrollController: _scrollController,
-          items: widget.items,
-          isLoading: widget.isLoading,
-          isLoadMore: widget.isLoadMore,
-          padding: widget.padding,
-          itemBuilder: widget.itemBuilder,
-          shimmerBaseColor: widget.shimmerBaseColor,
-          shimmerContainersColor: widget.shimmerContainersColor,
-          loadMoreIndicatorColor: widget.loadMoreIndicatorColor,
-          loadMoreBackgroundColor: widget.loadMoreBackgroundColor,
-        ),
-      );
-    }
-
-    return _PaginatedListContent<T>(
+    final content = _PaginatedListContent<T>(
       scrollController: _scrollController,
       items: widget.items,
       isLoading: widget.isLoading,
       isLoadMore: widget.isLoadMore,
       padding: widget.padding,
       itemBuilder: widget.itemBuilder,
+      skeletonItemCount: widget.skeletonItemCount,
+      skeletonItemBuilder: widget.skeletonItemBuilder,
       shimmerBaseColor: widget.shimmerBaseColor,
       shimmerContainersColor: widget.shimmerContainersColor,
       loadMoreIndicatorColor: widget.loadMoreIndicatorColor,
       loadMoreBackgroundColor: widget.loadMoreBackgroundColor,
     );
+
+    if (widget.onRefresh != null) {
+      return RefreshIndicator(onRefresh: widget.onRefresh!, child: content);
+    }
+
+    return content;
   }
 }
 
@@ -147,6 +184,8 @@ class _PaginatedListContent<T> extends StatelessWidget {
     required this.isLoading,
     required this.isLoadMore,
     required this.itemBuilder,
+    required this.skeletonItemCount,
+    this.skeletonItemBuilder,
     this.padding,
     this.shimmerBaseColor,
     this.shimmerContainersColor,
@@ -159,6 +198,8 @@ class _PaginatedListContent<T> extends StatelessWidget {
   final bool isLoading;
   final bool isLoadMore;
   final Widget Function(BuildContext context, T item) itemBuilder;
+  final int skeletonItemCount;
+  final Widget Function(BuildContext context)? skeletonItemBuilder;
   final EdgeInsets? padding;
   final Color? shimmerBaseColor;
   final Color? shimmerContainersColor;
@@ -167,6 +208,10 @@ class _PaginatedListContent<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // الـ Skeletonizer يرسم هياكل العناصر المعروضة؛ وفي التحميل الأولي تكون
+    // القائمة فارغة فلا يجد ما يرسمه وتظهر شاشة خالية. نرسم عناصر وهمية.
+    final bool showSkeleton = isLoading && items.isEmpty;
+
     return SkeletonizerWidget(
       isLoading: isLoading,
       shimmerBaseColor: shimmerBaseColor,
@@ -176,8 +221,13 @@ class _PaginatedListContent<T> extends StatelessWidget {
         padding:
             padding ??
             const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
-        itemCount: items.length + 1,
+        itemCount: showSkeleton ? skeletonItemCount : items.length + 1,
         itemBuilder: (context, index) {
+          if (showSkeleton) {
+            return skeletonItemBuilder?.call(context) ??
+                const _DefaultSkeletonItem();
+          }
+
           if (index == items.length) {
             return LoadMoreWidget(
               isLoadMore: isLoadMore,
@@ -187,6 +237,53 @@ class _PaginatedListContent<T> extends StatelessWidget {
           }
           return itemBuilder(context, items[index]);
         },
+      ),
+    );
+  }
+}
+
+/// عنصر وهمي محايد (صورة مصغّرة وسطران) يحوّله [SkeletonizerWidget] إلى هيكل
+/// shimmer أثناء التحميل الأولي حين لا يمرّر المستهلك شكلاً خاصاً به.
+class _DefaultSkeletonItem extends StatelessWidget {
+  const _DefaultSkeletonItem();
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = Theme.of(context).colorScheme.surfaceContainerHighest;
+    final BorderRadius radius = BorderRadius.circular(8.0);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 56.0,
+            height: 56.0,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+          ),
+          const SizedBox(width: 12.0),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 14.0,
+                  decoration: BoxDecoration(color: color, borderRadius: radius),
+                ),
+                const SizedBox(height: 10.0),
+                Container(
+                  height: 14.0,
+                  width: 160.0,
+                  decoration: BoxDecoration(color: color, borderRadius: radius),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -30,23 +30,34 @@ abstract final class FieldErrors {
   ///
   /// يعيد `true` إن وُجّه **خطأ واحد على الأقلّ** إلى حقلٍ معروف — وعندها لا
   /// تُعرض الرسالة العامّة. ويعيد `false` إن لم يكن في الفشل أخطاء حقول، أو
-  /// كانت لحقولٍ لا تخصّ هذا النموذج — فالرسالة العامّة هي المخرج الوحيد
-  /// حينئذٍ، وإلّا ضاع الخطأ صامتاً.
+  /// كانت لحقولٍ لا تخصّ هذا النموذج، أو كانت رسائلها فارغة — فالرسالة
+  /// العامّة هي المخرج الوحيد حينئذٍ، وإلّا ضاع الخطأ صامتاً.
+  ///
+  /// وفي الحالات كلّها يُمسح ما لا خطأ له ويُعاد التحقّق، فلا يبقى نصٌّ قديم
+  /// مرسوماً على حقلٍ لم يعد الخادم يشتكي منه.
   static bool apply({
     required Failure failure,
     required GlobalKey<FormState> formKey,
     required Map<String, ValueSetter<String?>> sinks,
   }) {
-    if (!failure.hasFields) return false;
-
     bool matched = false;
+    // لا خروج مبكّر عند فشلٍ بلا حقول: الأحواض تُمسح في هذا المسار كما تُمسح
+    // في مسار «حقولٌ لا تطابق»، وإلّا بقي خطأٌ قديم معلّقاً على حقلٍ صحّحه
+    // المستخدم لمجرّد أنّ الرد التالي جاء بلا أخطاء حقول.
     for (final MapEntry<String, ValueSetter<String?>> entry in sinks.entries) {
-      final String? message = failure.fieldError(entry.key);
+      final String? raw = failure.fieldError(entry.key);
+      // رسالةٌ فارغة أو فراغاتٌ كلّها ليست خطأً معروضاً: تمريرها نصّاً يجعل
+      // `Form` يعدّ الحقل غير صالحٍ بسطرٍ لا نصّ فيه، فلا المستخدم يقرأ شيئاً
+      // ولا الرسالة العامّة تُعرض. تُعامَل معاملة «لا خطأ» كما تفعل
+      // `Failure.fromJson` بالرسالة العامّة البيضاء.
+      final String? message = (raw == null || raw.trim().isEmpty) ? null : raw;
       entry.value(message);
       if (message != null) matched = true;
     }
 
-    if (matched) formKey.currentState?.validate();
+    // التحقّق يُعاد عند المطابقة ليظهر النصّ الجديد، وعند عدمها ليرتفع نصٌّ
+    // قديم مرسوم — فالمسح في الحوض وحده لا يُعيد رسم الحقل.
+    if (sinks.isNotEmpty) formKey.currentState?.validate();
     return matched;
   }
 

@@ -2,11 +2,12 @@ import 'package:flutter/widgets.dart';
 
 /// `Navigator` يوقِف كلّ التوجيه بمجرّد استدعاء [lock].
 ///
-/// الفكرة: تجاوز دوالّ الدفع في [NavigatorState] بحيث — وهو مقفول — **تعود
-/// مبكّرًا دون استدعاء `super`**. وبما أنّ `super` هو الذي يستدعي `onGenerateRoute`
-/// ويعدّل المكدّس، فإنّ **الدفع لا يُنفَّذ إطلاقًا ولا يُبنى أيّ Route** — لا استبدال،
-/// لا إزالة، لا شاشة سوداء، وكأنّ الاستدعاء لم يحدث. يُستخدَم لمنع الخروج من شاشة
-/// حاجبة (كشاشة التحديث الإجباريّ) بعد عرضها.
+/// الفكرة: تجاوز دوالّ الدفع والإزالة في [NavigatorState] بحيث — وهو مقفول —
+/// **تعود مبكّرًا دون استدعاء `super`**. وبما أنّ `super` هو الذي يستدعي
+/// `onGenerateRoute` ويعدّل المكدّس، فإنّ **الدفع لا يُنفَّذ إطلاقًا ولا يُبنى أيّ
+/// Route** — لا استبدال، لا إزالة، لا شاشة سوداء، وكأنّ الاستدعاء لم يحدث.
+/// وبحجب `pop` كذلك لا يقدر زرّ الرجوع ولا أيّ استدعاءٍ يدويّ على سحب الشاشة
+/// الحاجبة (كشاشة التحديث الإجباريّ) ليكشف التطبيق خلفها.
 ///
 /// القفل ثابت في الذاكرة → يُصفَّر تلقائيًّا عند إعادة تشغيل التطبيق.
 ///
@@ -41,7 +42,8 @@ class GuardedNavigator extends Navigator {
   /// true بعد قفل التنقّل. يُصفَّر عند إعادة تشغيل التطبيق.
   static bool get locked => _locked;
 
-  /// يقفل التنقّل نهائيًّا: بعده أيّ `push*` لا يُنفَّذ ولا يصل `onGenerateRoute`.
+  /// يقفل التنقّل نهائيًّا: بعده أيّ `push*` لا يُنفَّذ ولا يصل `onGenerateRoute`،
+  /// وأيّ `pop*` لا يُزيل شيئًا من المكدّس.
   static void lock() => _locked = true;
 
   @override
@@ -120,6 +122,39 @@ class GuardedNavigatorState extends NavigatorState {
               result: result,
               arguments: arguments,
             );
+
+  // ── حجب الخروج ───────────────────────────────────────────────────────────
+  // القفل يعني «أوقِف التوجيه»، لا «أوقِف الدفع»: لو بقي `pop` عاملًا لخرج
+  // المستخدم من الشاشة الحاجبة بزرّ الرجوع وعاد إلى التطبيق خلفها، فيسقط الغرض
+  // من القفل كلّه.
+  //
+  // وتجاوُز `pop` وحده لا يكفي: `popUntil` و`popUntilWithResult` في
+  // [NavigatorState] حلقتان لا تنتهيان إلّا بتغيّر قمّة المكدّس — و`pop` المحجوب
+  // لا يغيّرها، فتدوران بلا نهاية ويتجمّد التطبيق. لذا يُحجبان قبل دخول الحلقة.
+  //
+  // أمّا `removeRoute` و`replace` فلا تُحجَبان عمدًا: إطار فلاتر نفسه يستدعيهما
+  // (القوائم المنسدلة و`showSearch` مثلًا) لطيّ طبقةٍ فُتحت قبل القفل، وحجبُهما
+  // يتركها عالقةً على الشاشة إلى الأبد.
+  @override
+  void pop<T extends Object?>([T? result]) {
+    if (GuardedNavigator._locked) return;
+    super.pop<T>(result);
+  }
+
+  @override
+  void popUntil(RoutePredicate predicate) {
+    if (GuardedNavigator._locked) return;
+    super.popUntil(predicate);
+  }
+
+  @override
+  void popUntilWithResult<T extends Object?>(
+    RoutePredicate predicate,
+    T? result,
+  ) {
+    if (GuardedNavigator._locked) return;
+    super.popUntilWithResult<T>(predicate, result);
+  }
 
   // ── نسخ الاستعادة (تُعيد معرّف استعادة String؛ '' = لا شيء) ───────────────
   @override

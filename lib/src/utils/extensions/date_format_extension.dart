@@ -1,16 +1,26 @@
+import 'dart:math' as math;
+
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 /// Extension لتنسيق التواريخ
 extension DateFormatExtension on DateTime {
-  /// إضافة فارق التوقيت المحلي
-  DateTime get _localDateTime {
-    final duration = DateTime.now().timeZoneOffset;
-    return add(Duration(hours: duration.inHours));
-  }
+  /// التاريخ بالتوقيت المحلّي، جاهزاً للتنسيق.
+  ///
+  /// كان يُضيف الإزاحة يدوياً إلى `this` فيُزيح التاريخَ المحلّي مرّتين
+  /// (`DateTime.now()` في الرياض كانت تُعرض ‎+3 ساعات)، و`inHours` يبتر
+  /// الأنصاف فتخطئ الهند ‎+5:30 وإيران ‎+3:30. و`toLocal()` تتكفّل
+  /// بالإزاحة والتوقيت الصيفي معاً.
+  DateTime get _localDateTime => isUtc ? toLocal() : this;
 
   /// تنسيق: yyyy-MM-dd
-  String get toDateString => DateFormat('yyyy-MM-dd').format(_localDateTime);
+  ///
+  /// اللغة مثبّتة على `en_US` عمداً: بلا وسيطٍ للّغة يتبع `DateFormat` قيمةَ
+  /// `Intl.defaultLocale`، فيرمي `LocaleDataException` إن لم تُهيَّأ بياناتُها
+  /// (وهذا الـ getter الوحيد هنا بلا `initializeDateFormatting`)، وقد يطبع
+  /// أرقاماً هندية في لغاتٍ كـ`ar_EG` فيفسد نصٌّ يُرسَل إلى الخادم. و`en_US`
+  /// متاحة في intl بلا تهيئة.
+  String get toDateString => DateFormat('yyyy-MM-dd', 'en_US').format(_localDateTime);
 
   /// تنسيق كامل: MMMM d, yyyy, h:mm a بالعربية
   String get toFullDateTime {
@@ -51,8 +61,14 @@ extension DateFormatExtension on DateTime {
     // أمس
     if (_isSameDay(dateToCheck, yesterday)) return 'أمس';
 
-    // ضمن الأسبوع الحالي
-    if (today.difference(dateToCheck).inDays < 7) {
+    // ضمن الأسبوع الماضي
+    //
+    // الفارق مُوقَّع: تاريخٌ مستقبليّ يجعل `inDays` سالباً، والسالب دائماً `< 7`،
+    // فكان موعدٌ بعد ثلاثة أشهر — أو تاريخٌ من الخادم وساعةُ الجهاز متأخّرة —
+    // يُعرض «الخميس» بلا شهرٍ ولا سنة فيُقرأ على أنّه الخميس الماضي. و`isAfter`
+    // على تاريخين مُصفَّرَي الوقت مقارنةٌ تقويمية لا يُزحزحها التوقيت الصيفي،
+    // فيسقط كلّ تاريخٍ مستقبليّ إلى التنسيق الكامل أدناه.
+    if (!dateToCheck.isAfter(today) && today.difference(dateToCheck).inDays < 7) {
       const arabicDays = ['الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'];
       return arabicDays[dateToCheck.weekday - 1];
     }
@@ -119,14 +135,18 @@ extension DateFormatExtension on DateTime {
       return hours > 0 ? '${diff.inDays} ي و $hours س' : '${diff.inDays} ي';
     }
 
-    if (diff.inDays < 365) {
+    // الحدّ 360 يوماً (12 × 30) لا 365: الشهر هنا 30 يوماً، فكلّ مدّة بين 360
+    // و364 يوماً كانت تُعطي 12 فتظهر «12 ش» بدل «سنة».
+    if (diff.inDays < 360) {
       final months = diff.inDays ~/ 30;
       final days = diff.inDays % 30;
       return days > 0 ? '$months ش و $days ي' : '$months ش';
     }
 
-    final years = diff.inDays ~/ 365;
-    final months = (diff.inDays % 365) ~/ 30;
+    // السنوات تبقى على 365 يوماً (أدقّ في المدد الطويلة)، وما دون 365 يوماً
+    // يُعدّ سنةً بلا أشهر، والباقي محدودٌ بـ11 شهراً للسبب نفسه.
+    final years = math.max(diff.inDays ~/ 365, 1);
+    final months = math.min(math.max(diff.inDays - years * 365, 0) ~/ 30, 11);
     return months > 0 ? '$years سن و $months ش' : '$years سن';
   }
 
@@ -163,7 +183,8 @@ extension DateFormatExtension on DateTime {
       return 'منذ $days يوم';
     }
 
-    if (diff.inDays < 365) {
+    // 360 لا 365 — كما في toTimeAgo: كانت تظهر «منذ 12 شهر» بدل «منذ سنة»
+    if (diff.inDays < 360) {
       final months = diff.inDays ~/ 30;
       if (months == 1) return 'منذ شهر';
       if (months == 2) return 'منذ شهرين';
@@ -171,7 +192,7 @@ extension DateFormatExtension on DateTime {
       return 'منذ $months شهر';
     }
 
-    final years = diff.inDays ~/ 365;
+    final years = math.max(diff.inDays ~/ 365, 1);
     if (years == 1) return 'منذ سنة';
     if (years == 2) return 'منذ سنتين';
     if (years <= 10) return 'منذ $years سنوات';
@@ -185,19 +206,21 @@ extension DateFormatExtension on DateTime {
 /// Extension لتحويل النص إلى تاريخ
 extension DateStringExtension on String {
   /// تحويل العمر إلى تاريخ ميلاد
+  ///
+  /// التحقّق قبل البناء لا بعده: `DateTime` ترمي `ArgumentError` حين يخرج
+  /// العام عن مداها، وهي `Error` لا `Exception` فلم يكن `on Exception`
+  /// يلتقطها، فيسقط التطبيق على عمرٍ ملصوقٍ طويل من حقل نصّي.
   String get ageToBirthDate {
-    try {
-      final age = int.parse(this);
-      final today = DateTime.now();
-      var birthDate = DateTime(today.year - age, today.month, today.day);
+    final age = int.tryParse(this);
+    if (age == null || age < 0 || age > 150) return this;
 
-      if (age != birthDate.toAge) {
-        birthDate = DateTime(birthDate.year + 1, birthDate.month, birthDate.day);
-      }
+    final today = DateTime.now();
+    var birthDate = DateTime(today.year - age, today.month, today.day);
 
-      return birthDate.toDateString;
-    } on Exception catch (_) {
-      return this;
+    if (age != birthDate.toAge) {
+      birthDate = DateTime(birthDate.year + 1, birthDate.month, birthDate.day);
     }
+
+    return birthDate.toDateString;
   }
 }
