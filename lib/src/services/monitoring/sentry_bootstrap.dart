@@ -27,6 +27,12 @@ abstract final class SentryBootstrap {
   /// والعيّنة تكفي لرصد الأنماط.
   static const double tracesSampleRate = 0.2;
 
+  /// سقف انتظار تهيئة Sentry قبل إقلاع التطبيق بلا مراقبة.
+  ///
+  /// عشر ثوانٍ: أطول بكثير من التهيئة السليمة (أجزاء من الثانية)، وأقصر
+  /// بكثير من صبر المستخدم على شاشة إقلاعٍ لا تتحرّك.
+  static const Duration _initTimeout = Duration(seconds: 10);
+
   /// يُهيّئ Sentry ثمّ يُشغّل التطبيق.
   ///
   /// [releasePrefix] اسم المشروع في Sentry (`flutter-abber`، `azbah`…)؛
@@ -46,11 +52,20 @@ abstract final class SentryBootstrap {
     // ولو فشلت تهيئة Sentry أو فشل جلب معلومات الجهاز.
     bool appStarted = false;
     Future<void> guardedRunner() async {
+      // idempotent: لو انتهت التهيئة متأخّرةً بعد أن أقلعنا بالمهلة أدناه،
+      // فلا تُشغّل التطبيق مرّتين.
+      if (appStarted) return;
       appStarted = true;
       await appRunner();
     }
 
     try {
+      // مهلة، لا try/catch وحده: `SentryFlutter.init` يُشغّل تكاملاته كلّها
+      // **قبل** `appRunner` (sentry/lib/src/sentry.dart)، ومنها تكاملٌ ينادي
+      // الطبقة الأصليّة. فالحارس أدناه يلتقط الرمي، أمّا نداءٌ أصليّ لا يردّ
+      // فيوقف الدالّة كلّها ولا يصل السطر الذي يُشغّل التطبيق — شاشةُ إقلاعٍ
+      // ساكنةٌ إلى الأبد. TimeoutException من Exception فيلتقطها `on Object`
+      // أدناه ويُقلع التطبيق بلا مراقبة، وهو أهون من ألّا يُقلع.
       await SentryFlutter.init(
         (SentryFlutterOptions options) async {
           // الإعدادات المضمونة أوّلاً: لو رمى ما بعدها بقي Sentry صالحاً.
@@ -87,7 +102,7 @@ abstract final class SentryBootstrap {
           }
         },
         appRunner: guardedRunner,
-      );
+      ).timeout(_initTimeout);
     } on Object catch (e, st) {
       log(
         'فشلت تهيئة Sentry — يُشغَّل التطبيق بلا مراقبة',
@@ -95,7 +110,10 @@ abstract final class SentryBootstrap {
         stackTrace: st,
         name: 'SentryBootstrap',
       );
-      if (!appStarted) await appRunner();
+      // عبر guardedRunner لا appRunner مباشرةً: مع المهلة قد تكتمل التهيئة
+      // بعد انقضائها فتنادي guardedRunner، فلو أقلعنا هنا بنداءٍ مباشر لم
+      // يُرفع العَلَم وشُغّل التطبيق مرّتين.
+      await guardedRunner();
     }
   }
 
