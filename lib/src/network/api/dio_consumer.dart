@@ -19,16 +19,22 @@ class DioConsumer implements ApiConsumer {
     required String baseUrl,
     required int internalServerErrorCode,
     bool clearInterceptors = true,
+    bool allowBadCertificates = true,
   }) {
-    // قرارٌ مقصود ومُراجَع: تُقبل كلّ شهادات TLS بلا تحقّق، في كلّ البيئات
-    // بما فيها الإنتاج. يُعطّل هذا حمايةَ MITM في جميع المشاريع المستهلِكة.
-    // أُبقي عليه بطلب صريح من مالك المكتبة — لا يُغيَّر إلّا بقراره.
-    (client.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
-      final HttpClient client = HttpClient();
-      client.badCertificateCallback =
-          (X509Certificate cert, String host, int port) => true;
-      return client;
-    };
+    // [allowBadCertificates]: افتراضه `true` حفاظاً على سلوك المشاريع القائمة — تُقبل كلّ
+    // شهادة TLS بلا تحقّق، وهو قرارٌ قائمٌ بطلب مالك المكتبة. تمريرُ `false` يترك تحقّقَ
+    // dart:io الافتراضيّ كما هو، فتُرفَض الشهادة المزوّرة أو المنتهية أو التي لاسمِ نطاقٍ
+    // آخر — وهو ما يحفظ حمايةَ MITM لمشروعٍ يحمل رموزَ دخولٍ أو بياناتٍ خاصّة.
+    // المحوِّل لا يُمَسّ إلّا عند `true`، فالتحويل إلى `IOHttpClientAdapter` (الذي يرمي على
+    // الويب) لا يقع على من اختار التحقّق.
+    if (allowBadCertificates) {
+      (client.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
+        final HttpClient client = HttpClient();
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => true;
+        return client;
+      };
+    }
 
     client.options
       ..baseUrl = baseUrl
