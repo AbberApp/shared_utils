@@ -1,3 +1,22 @@
+## 3.3.0
+
+* feat(ShareService + ShareOrigin): ورقة المشاركة والحافظة في المكتبة، ومعها
+  مصدر الورقة على iPad.
+
+  كان كلّ مشروعٍ يكتب `SharePlus.instance.share(...)` بيده، ويعيد معها سطرَي
+  `findRenderObject()` و`localToGlobal(Offset.zero) & box.size` — تسعة مواضع في
+  «عبر» و«منام» ولوحة الإدارة و«وصال». ومن نسي `sharePositionOrigin` رأى ورقة
+  المشاركة تخرج من زاوية الشاشة على iPad، لأنّها هناك popover يطلب مستطيلاً
+  يخرج منه.
+
+  `ShareService`: `copy` و`shareText` و`shareBytes` (يكتب البايتات في المجلّد
+  المؤقّت ويحفظ الاسم بـ`fileNameOverrides`) و`shareFiles`. وكلّها تقبل
+  `origin`.
+
+  `ShareOrigin`: إضافةٌ على `BuildContext` تعطي `context.shareOrigin` —
+  مستطيل العنصر المضغوط بإحداثيات الشاشة، و`null` حين لا حجم له بعد. تُقرأ من
+  سياق العنصر لا من سياق الصفحة، وإلّا خرجت الورقة من مكانٍ لا علاقة له بالزرّ.
+
 ## 3.2.0
 
 * feat(DioConsumer): `allowBadCertificates` — مفتاحٌ على تحقّق شهادات TLS.
