@@ -99,7 +99,6 @@ export 'src/utils/delay_handler.dart';
 export 'src/utils/phone/intl_phone_utils.dart';
 export 'src/utils/parse_to_map.dart';
 
-
 // ═══════════════════════════════════════════════════════════════════════════
 // Entities - البيانات
 // ═══════════════════════════════════════════════════════════════════════════
