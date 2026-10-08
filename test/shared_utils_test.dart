@@ -90,6 +90,22 @@ class _Page extends BaseEntity<String> {
   _Page({required super.count, required super.next, required super.results});
 }
 
+/// حالتا bloc بلا خصائص — كما في كلّ تطبيقاتنا (`LoadingState` و`InitialState`).
+sealed class _State extends Equatable {
+  const _State();
+
+  @override
+  List<Object?> get props => const <Object?>[];
+}
+
+final class _LoadingState extends _State {
+  const _LoadingState();
+}
+
+final class _EmptyState extends _State {
+  const _EmptyState();
+}
+
 void main() {
   // ═════════════════════════════════════════════════════════════════════════
   // ١) بنية البرميل — ما يُصدَّر موجود، وما هو موجود يُصدَّر
@@ -216,6 +232,15 @@ void main() {
         contains("export 'package:fluttertoast/fluttertoast.dart' show ToastGravity;"),
         reason: 'تصديرٌ مفتوح لـfluttertoast يُسرّب Fluttertoast وToast إلى كل مستهلك',
       );
+    });
+
+    test('equatable تصل — وحالتان من صنفين مختلفين لا تتساويان', () {
+      // 3.0.0 كفّت عن مقارنة runtimeType في القيم المتداخلة داخل props، وأبقتها
+      // في المساواة العليا. والأخيرة هي ما يمنع bloc من ابتلاع «تحميل» يليه
+      // «فراغ» حين يكون props كلاهما فارغاً — فلو سقطت لسكتت الشاشات بلا خطأ.
+      expect(const _LoadingState(), const _LoadingState());
+      expect(const _LoadingState(), isNot(const _EmptyState()));
+      expect(const _LoadingState().hashCode, isNot(const _EmptyState().hashCode));
     });
 
     test('path_provider تصل', () {

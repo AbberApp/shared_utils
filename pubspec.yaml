@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 3.5.0
+version: 3.6.0
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -20,6 +20,8 @@ dependencies:
   audio_session: ^0.2.4
   sentry_flutter: ^10.0.0-rc.2
   bloc: ^9.2.1
+  # أحدث إصدار، وفرضٌ على كلّ التطبيقات: تُعلَن هنا وحدها وتُصدَّر من البرميل.
+  equatable: ^3.0.0
   dio: ^5.11.1
   # ^7.3.1 لا ^7.3.2: نسخة 7.3.2 ترفع nm إلى ^0.6.0 الذي يطلب dbus ^0.8.0،
   # و flutter_local_notifications 22.x يثبّت dbus ^0.7.8 عبر إضافته اللينكسية،

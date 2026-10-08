@@ -151,6 +151,7 @@ export 'src/services/monitoring/sentry_noise_filter.dart';
 
 export 'package:connectivity_plus/connectivity_plus.dart';
 export 'package:dio/dio.dart';
+export 'package:equatable/equatable.dart';
 export 'package:json_annotation/json_annotation.dart';
 export 'package:open_file/open_file.dart';
 export 'package:path_provider/path_provider.dart';
