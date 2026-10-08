@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 3.4.1
+version: 3.4.2
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -21,7 +21,10 @@ dependencies:
   sentry_flutter: ^10.0.0-rc.2
   bloc: ^9.2.1
   dio: ^5.11.1
-  connectivity_plus: ^7.3.2
+  # ^7.3.1 لا ^7.3.2: نسخة 7.3.2 ترفع nm إلى ^0.6.0 الذي يطلب dbus ^0.8.0،
+  # و flutter_local_notifications 22.x يثبّت dbus ^0.7.8 عبر إضافته اللينكسية،
+  # فرفعُ الحدّ يُفشل حلّ التبعيات عند كلّ مستهلكٍ يُرسل إشعاراً محلياً.
+  connectivity_plus: ^7.3.1
   web_socket_channel: ^3.0.3
 
   # File & Image Pickers

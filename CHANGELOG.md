@@ -1,3 +1,32 @@
+## 3.4.2
+
+* fix(deps): إعادة `connectivity_plus` إلى `^7.3.1` — القيد السابق كان يُفشل
+  حلّ التبعيات عند كلّ مستهلك.
+
+  رفعته 3.4.1 إلى `^7.3.2`، وهي نسخةٌ ترفع `nm` إلى `^0.6.0` الذي يطلب
+  `dbus ^0.8.0`. و`flutter_local_notifications` 22.x — في «عزبة» ولوحة
+  إدارتها — يثبّت `dbus ^0.7.8` عبر `flutter_local_notifications_linux 8.0.1`.
+  فلا يجتمع 0.8 و0.7، و`pub get` يسقط عند المستهلك لا عند المكتبة. ولا نسخة
+  مستقرّة من `flutter_local_notifications` تقبل `dbus 0.8` حتى الآن (ما يقبله
+  هو 23.0.0-dev وحده).
+
+  و`^7.3.1` لا يمنع 7.3.2: يسمح للمُحلِّل أن ينزل إليها حين يَسَعه ذلك.
+
+* feat(exports): تصدير `path_provider` — فيستغني عنه المستهلك.
+
+  المكتبة تعتمده أصلاً في `ShareService` و`FileOpenService`، وكان كلّ مشروعٍ
+  يُعيد إعلانه ليُنادي `getTemporaryDirectory`. صار يأتي مع
+  `package:shared_utils/shared_utils.dart` كما يأتي `url_launcher` و`dio`.
+
+## 3.4.1
+
+* chore(deps): رفع إصدارات التبعيات — `sentry_flutter` إلى `^10.0.0-rc.2`،
+  و`intl` و`meta` و`image_picker` و`share_plus` و`url_launcher` و`fluttertoast`
+  و`device_info_plus` و`package_info_plus` و`phone_numbers_parser`.
+
+  ورُفع قيدا `intl` و`meta` المثبَّتان: كانا مشروطين بـ flutter_localizations
+  في Flutter 3.44.x، وقد صار الجهاز على 3.47.4 فلم يَعُد الحدّ الثابت لازماً.
+
 ## 3.4.0
 
 * feat(FileOpenService + FileOpenOutcome): فتح الملفّات بتطبيق النظام في

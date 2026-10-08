@@ -153,6 +153,7 @@ export 'package:connectivity_plus/connectivity_plus.dart';
 export 'package:dio/dio.dart';
 export 'package:json_annotation/json_annotation.dart';
 export 'package:open_file/open_file.dart';
+export 'package:path_provider/path_provider.dart';
 export 'package:share_plus/share_plus.dart';
 export 'package:skeletonizer/skeletonizer.dart';
 export 'package:url_launcher/url_launcher.dart';
