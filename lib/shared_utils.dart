@@ -149,15 +149,36 @@ export 'src/services/monitoring/sentry_noise_filter.dart';
 // ولا تُضف `open_filex` مكان `open_file`: الأولى بلا `Package.swift` فتُبقي
 // CocoaPods حيّةً في كلّ مشروعٍ يستعملها.
 
+export 'package:animate_do/animate_do.dart';
+export 'package:bloc_concurrency/bloc_concurrency.dart';
+export 'package:confetti/confetti.dart';
 export 'package:connectivity_plus/connectivity_plus.dart';
+export 'package:credit_card_type_detector/credit_card_type_detector.dart';
+export 'package:credit_card_type_detector/models.dart';
+export 'package:custom_timer/custom_timer.dart';
 export 'package:dio/dio.dart';
 export 'package:equatable/equatable.dart';
+export 'package:flutter_bloc/flutter_bloc.dart';
+export 'package:flutter_dotenv/flutter_dotenv.dart';
+export 'package:flutter_svg/flutter_svg.dart';
+export 'package:get_it/get_it.dart';
+export 'package:grouped_list/grouped_list.dart';
+// adapters.dart تشمل hive_flutter.dart وhive_ce نفسها.
+export 'package:hive_ce_flutter/adapters.dart';
+export 'package:ip_country_lookup/ip_country_lookup.dart';
 export 'package:json_annotation/json_annotation.dart';
+export 'package:jwt_decoder/jwt_decoder.dart';
+export 'package:lottie/lottie.dart';
 export 'package:open_file/open_file.dart';
 export 'package:path_provider/path_provider.dart';
+export 'package:photo_view/photo_view.dart';
+export 'package:pinput/pinput.dart';
 export 'package:share_plus/share_plus.dart';
+export 'package:showcaseview/showcaseview.dart';
 export 'package:skeletonizer/skeletonizer.dart';
+export 'package:solar_community_icons/solar_community_icons.dart';
 export 'package:url_launcher/url_launcher.dart';
+export 'package:uuid/uuid.dart';
 
 // وهذه بـ`show` لا كاملةً: كلٌّ منها يحمل أسماءً عامّة تصطدم بما في التطبيقات،
 // والاصطدام بين استيرادين لا يظهر إلّا عند الاستعمال — في شاشةٍ لم يلمسها أحد.
@@ -167,11 +188,26 @@ export 'package:url_launcher/url_launcher.dart';
 //   استيراداً ملتبساً.
 // - `sentry_flutter` تُعرّف `User` و`Device` و`App` و`Scope`، وهي أسماء كيانات
 //   في تطبيقاتنا.
-// - `audio_session` و`file_picker`: ما تستعمله التطبيقات منهما فقط، لا عشرات
-//   الأنواع التي تجيء معه.
+// - `dartz` تُعرّف `State` (موناد الحالة) باسم صنف Flutter الذي يرثه كلّ ودجتٍ
+//   ذي حالة — تصديرها كاملةً يكسر كلّ `extends State<…>` في ملفٍّ يستورد المكتبة.
+// - `pointycastle` تُعرّف `Padding` (حشو التشفير) باسم ودجت Flutter نفسه.
+// - `audio_session` و`file_picker` و`basic_utils`: ما تستعمله التطبيقات منها
+//   فقط، لا عشرات الأنواع التي تجيء معه (و`basic_utils` تُعرّف `DateUtils`).
 
 export 'package:audio_session/audio_session.dart'
     show AVAudioSession, AVAudioSessionPort, AVAudioSessionPortOverride, AVAudioSessionRouteChange;
+export 'package:basic_utils/basic_utils.dart' show CryptoUtils;
+export 'package:dartz/dartz.dart' show Either, Left, Right, Unit, unit;
 export 'package:file_picker/file_picker.dart' show FilePicker, FileType, PlatformFile;
 export 'package:intl/intl.dart' show DateFormat, NumberFormat;
 export 'package:sentry_flutter/sentry_flutter.dart' show Sentry, SentryNavigatorObserver;
+export 'package:pointycastle/export.dart'
+    show
+        AEADParameters,
+        AESEngine,
+        GCMBlockCipher,
+        KeyParameter,
+        OAEPEncoding,
+        PublicKeyParameter,
+        RSAEngine,
+        RSAPublicKey;

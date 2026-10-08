@@ -1,3 +1,38 @@
+## 3.7.0
+
+* feat(deps): اثنتان وعشرون حزمةً كانت التطبيقات تعلنها كلٌّ بنفسه صارت تُعلَن
+  هنا وحدها وتُصدَّر من البرميل، على أحدث إصدار:
+  `flutter_bloc` و`bloc_concurrency` و`get_it` و`dartz`؛ `solar_community_icons`
+  و`flutter_svg` و`lottie` و`photo_view` و`grouped_list` و`custom_timer`
+  و`confetti` و`animate_do` و`showcaseview` و`pinput`؛ `hive_ce_flutter`
+  و`flutter_dotenv`؛ `pointycastle` و`basic_utils` و`credit_card_type_detector`
+  و`jwt_decoder` و`uuid` و`ip_country_lookup`.
+
+  شرط الدخول: ألّا تُدخل الحزمة كوداً أصلياً جديداً على أيّ تطبيق — حُسب من
+  شجرة تبعيات كلٍّ منها. فما لا يستعمله تطبيقٌ منها يحذفه البناء بلا ثمن.
+  وبقيت في التطبيقات — بقيدٍ واحد على أحدث إصدار في الجميع — الإضافاتُ الأصلية
+  (firebase وcamera وrecord وlocal_auth وflutter_local_notifications…)، لأنّها
+  كانت ستحمل كودها وأذوناتها إلى تطبيقاتٍ لا تستعملها، وأبل ترفض تطبيقاً يربط
+  الكاميرا أو الميكروفون بلا وصف استخدام؛ و`cached_network_image` (تجرّ
+  sqflite)، و`flutter_widget_from_html` (تجرّ مشغّلَي الصوت والفيديو وwebview)،
+  و`path` (تُستورد ببادئة `as p`).
+
+* `dartz` و`pointycastle` و`basic_utils` بـ`show` لا كاملةً: الأولى تُعرّف
+  `State` والثانية `Padding` والثالثة `DateUtils` — أسماء Flutter نفسها، وتصديرها
+  كاملاً يكسر كلّ ودجتٍ ذي حالة وكلّ `Padding` في ملفٍّ يستورد المكتبة. واختبارٌ
+  يمنع فتحها.
+
+* `pinput ^6.0.2` لا 7.0.0 — استثناءٌ مقصود من «أحدث إصدار». السابعة انتقلت إلى
+  `material_ui`، ومؤلّفها ينصّ على بقاء التطبيقات التي على
+  `package:flutter/material.dart` على 6.x، وكلّ تطبيقاتنا عليها. وجُرّبت: `Pinput`
+  7 داخل `Scaffold` من flutter/material يرمي «No Material widget found». فكانت
+  شاشة رمز التحقّق في «عبر» و«منام» — على 7 منذ 2026-10-06 — تنكسر في نسخة
+  التطوير؛ وعادتا إلى 6.0.2.
+
+* `connectivity_plus` باقٍ على `^7.3.1`: انتقل العائق. `flutter_local_notifications`
+  صار يقبل dbus 0.8 (23.0.0-dev، وصارت التطبيقات كلّها عليه)، لكنّ
+  `geolocator_linux` 0.2.6 — أحدث إصدار، في «عزبة» — يثبّت `dbus ^0.7.3`.
+
 ## 3.6.0
 
 * feat(deps): `equatable ^3.0.0` — أحدث إصدار، يُعلَن في المكتبة وحدها ويُصدَّر

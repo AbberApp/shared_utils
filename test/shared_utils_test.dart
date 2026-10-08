@@ -234,6 +234,51 @@ void main() {
       );
     });
 
+    test('حزم 3.7.0 تصل بأنواعها الرئيسية عبر استيرادٍ واحد', () {
+      // الحالة والحقن
+      expect(BlocProvider, isNotNull);
+      expect(Cubit, isNotNull);
+      expect(sequential, isA<Function>());
+      expect(GetIt.instance, isNotNull);
+      expect(const Right<String, int>(1).isRight(), isTrue);
+      expect(unit, isA<Unit>());
+      // الواجهة
+      expect(SolarCommunityLinearIcons, isNotNull);
+      expect(SvgPicture, isNotNull);
+      expect(Lottie, isNotNull);
+      expect(PhotoView, isNotNull);
+      expect(GroupedListView, isNotNull);
+      expect(CustomTimerController, isNotNull);
+      expect(ConfettiController, isNotNull);
+      expect(FadeIn, isNotNull);
+      expect(Showcase, isNotNull);
+      expect(Pinput, isNotNull);
+      // التخزين والإعداد
+      expect(Hive, isNotNull);
+      expect(ColorAdapter, isNotNull);
+      expect(dotenv, isA<DotEnv>());
+      // التشفير والدفع والهويّة
+      expect(RSAEngine, isNotNull);
+      expect(CryptoUtils, isNotNull);
+      expect(detectCCType, isA<Function>());
+      expect(JwtDecoder, isNotNull);
+      expect(const Uuid().v4(), hasLength(36));
+      expect(IpCountryLookup, isNotNull);
+    });
+
+    test('dartz وpointycastle وbasic_utils تُصدَّر بـshow لا كاملةً', () {
+      // dartz تُعرّف State، وpointycastle تُعرّف Padding، وbasic_utils تُعرّف
+      // DateUtils — أسماء ودجات Flutter وأدواته نفسها.
+      final String barrel = _read('lib/shared_utils.dart');
+      for (final String pkg in <String>['dartz', 'pointycastle', 'basic_utils']) {
+        expect(
+          RegExp("export\\s+'package:$pkg/[^']+'\\s*;").hasMatch(barrel),
+          isFalse,
+          reason: '«$pkg» صار يُصدَّر كاملاً من البرميل — قيّده بـshow',
+        );
+      }
+    });
+
     test('equatable تصل — وحالتان من صنفين مختلفين لا تتساويان', () {
       // 3.0.0 كفّت عن مقارنة runtimeType في القيم المتداخلة داخل props، وأبقتها
       // في المساواة العليا. والأخيرة هي ما يمنع bloc من ابتلاع «تحميل» يليه

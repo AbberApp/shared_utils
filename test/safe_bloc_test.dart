@@ -12,7 +12,6 @@
 
 import 'dart:async';
 
-import 'package:bloc/bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_utils/shared_utils.dart';
 
