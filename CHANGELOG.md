@@ -1,3 +1,30 @@
+## 3.5.0
+
+المكتبة صارت مصدر التبعيات المشتركة: كلّ حزمةٍ تعتمدها لا يُعيد التطبيق
+إعلانها في `pubspec`، ولا يستوردها مباشرةً — تصله من
+`package:shared_utils/shared_utils.dart`. وكان في سبعة تطبيقات ٣٤ إعلاناً
+مكرّراً لاثنتي عشرة حزمة، بقيودٍ متخلّفة عن قيود المكتبة (`dio ^5.9.2` مقابل
+`^5.11.1`).
+
+* feat(exports): تصدير ما تستعمله التطبيقات من `intl` و`sentry_flutter`
+  و`audio_session` و`file_picker` — بـ`show` لا كاملةً.
+
+  `DateFormat` و`NumberFormat`؛ `Sentry` و`SentryNavigatorObserver`؛ أنواع
+  `AVAudioSession` الأربعة التي تحتاجها خدمة السمّاعة في المكالمات؛
+  `FilePicker` و`FileType` و`PlatformFile`.
+
+  والتقييد مقصود: `intl` تُعرّف `TextDirection` باسم صنف `dart:ui` نفسه —
+  وتطبيقاتنا تكتب `TextDirection.rtl` في عشرات الملفّات — و`sentry_flutter`
+  تُعرّف `User` و`Device` و`App`. تصديرهما كاملاً يكسر المستهلك عند أوّل
+  استعمالٍ للاسم، لا عند الاستيراد. واختبارٌ في `shared_utils_test.dart` يمنع
+  فتحهما.
+
+* feat(ImagePickerManager.pickVideo): اختيار فيديو من المعرض أو الكاميرا.
+
+  شاشة الكاميرا في القصص («عبر» ولوحة إدارتها و«منام») كانت تنادي
+  `ImagePicker().pickVideo` بيدها — والصورة في الشاشة نفسها تمرّ عبر
+  `pickImage`. صار المساران من المكتبة، بالتقاط الخطأ ورسالته نفسيهما.
+
 ## 3.4.2
 
 * fix(deps): إعادة `connectivity_plus` إلى `^7.3.1` — القيد السابق كان يُفشل

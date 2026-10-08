@@ -157,3 +157,20 @@ export 'package:path_provider/path_provider.dart';
 export 'package:share_plus/share_plus.dart';
 export 'package:skeletonizer/skeletonizer.dart';
 export 'package:url_launcher/url_launcher.dart';
+
+// وهذه بـ`show` لا كاملةً: كلٌّ منها يحمل أسماءً عامّة تصطدم بما في التطبيقات،
+// والاصطدام بين استيرادين لا يظهر إلّا عند الاستعمال — في شاشةٍ لم يلمسها أحد.
+//
+// - `intl` تُعرّف `TextDirection` باسم صنف `dart:ui` نفسه، وكلّ تطبيقاتنا عربيّة
+//   تكتب `TextDirection.rtl` في عشرات الملفّات؛ تصديرها كاملةً يجعلها كلّها
+//   استيراداً ملتبساً.
+// - `sentry_flutter` تُعرّف `User` و`Device` و`App` و`Scope`، وهي أسماء كيانات
+//   في تطبيقاتنا.
+// - `audio_session` و`file_picker`: ما تستعمله التطبيقات منهما فقط، لا عشرات
+//   الأنواع التي تجيء معه.
+
+export 'package:audio_session/audio_session.dart'
+    show AVAudioSession, AVAudioSessionPort, AVAudioSessionPortOverride, AVAudioSessionRouteChange;
+export 'package:file_picker/file_picker.dart' show FilePicker, FileType, PlatformFile;
+export 'package:intl/intl.dart' show DateFormat, NumberFormat;
+export 'package:sentry_flutter/sentry_flutter.dart' show Sentry, SentryNavigatorObserver;

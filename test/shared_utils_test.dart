@@ -218,6 +218,38 @@ void main() {
       );
     });
 
+    test('path_provider تصل', () {
+      expect(getTemporaryDirectory, isA<Function>());
+      expect(getApplicationDocumentsDirectory, isA<Function>());
+    });
+
+    test('ما تستعمله التطبيقات من intl وsentry وaudio_session وfile_picker يصل', () {
+      expect(DateFormat('yyyy-MM-dd').format(DateTime(2026, 10, 8)), '2026-10-08');
+      expect(NumberFormat, isNotNull);
+      expect(Sentry, isNotNull);
+      expect(SentryNavigatorObserver, isNotNull);
+      expect(AVAudioSessionPortOverride.speaker.name, 'speaker');
+      expect(AVAudioSessionPort.builtInSpeaker.name, 'builtInSpeaker');
+      expect(AVAudioSession, isNotNull);
+      expect(AVAudioSessionRouteChange, isNotNull);
+      expect(FileType.custom.name, 'custom');
+      expect(FilePicker, isNotNull);
+      expect(PlatformFile, isNotNull);
+    });
+
+    test('intl وsentry_flutter وaudio_session وfile_picker تُصدَّر بـshow لا كاملةً', () {
+      // intl تُعرّف TextDirection، وsentry تُعرّف User وDevice: تصديرٌ مفتوح يجعل
+      // `TextDirection.rtl` وكيانات التطبيقات استيراداً ملتبساً عند كلّ مستهلك.
+      final String barrel = _read('lib/shared_utils.dart');
+      for (final String pkg in <String>['intl', 'sentry_flutter', 'audio_session', 'file_picker']) {
+        expect(
+          RegExp("export\\s+'package:$pkg/[^']+'\\s*;").hasMatch(barrel),
+          isFalse,
+          reason: '«$pkg» صار يُصدَّر كاملاً من البرميل — قيّده بـshow',
+        );
+      }
+    });
+
     test('XFile واحدة لا اثنتان — image_picker وshare_plus تُصدّرانها معاً', () {
       // كلتاهما تُعيدان تصدير نوع `cross_file` نفسه. لو صارتا إعلانين مختلفين
       // لصار الاسم مُلتبساً وانكسر كلّ مستهلكٍ يذكر `XFile`.

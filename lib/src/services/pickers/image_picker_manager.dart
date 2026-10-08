@@ -65,6 +65,25 @@ class ImagePickerManager {
     }
   }
 
+  /// اختيار مقطع فيديو من المعرض أو الكاميرا.
+  ///
+  /// غير `FilePickerManager.pickVideo`: تلك تفتح مستعرض الملفّات، وهذه مكتبة
+  /// الصور — حيث يجد المستخدم ما صوّره بهاتفه.
+  static Future<File?> pickVideo(ImagePickerSource source) async {
+    try {
+      final XFile? video = await ImagePicker().pickVideo(
+        source: source == ImagePickerSource.camera
+            ? ImageSource.camera
+            : ImageSource.gallery,
+      );
+      return video != null ? File(video.path) : null;
+    } on Object catch (e) {
+      debugPrint('خطأ في اختيار الفيديو: $e');
+      showToast('حدث خطأ أثناء اختيار الفيديو');
+      return null;
+    }
+  }
+
   /// حصر الجودة في 0..100 — `image_picker` يتحقّق منها ويرمي `ArgumentError`
   /// لا `PlatformException`، فيعبر أي التقاطٍ ضيّق ويُسقط التطبيق. نحصرها هنا
   /// ليبقى السلوك آمناً في الإصدار، و`assert` يكشف القيمة الخاطئة في التطوير.
