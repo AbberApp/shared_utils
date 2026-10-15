@@ -37,6 +37,20 @@ String _withoutNegativeZero(String formatted) {
   return formatted.substring(1);
 }
 
+/// رمز الريال السعودي الرسميّ — `U+20C1 SAUDI RIYAL SIGN`.
+///
+/// يُكتب بصيغة الـ escape لا بالمحرف حرفياً: المحرف أُضيف في Unicode 17.0
+/// فتعرضه محرّرات وطرفيّات كثيرة مربّعاً فارغاً أو تُفسده عند النسخ، وشكلُه
+/// يجاور رموزاً أخرى في بلوك العملات فلا يُميَّز بالعين. والـ escape لا
+/// يعتمد على ترميز الملفّ ولا على ما يراه المحرّر.
+const String riyalSign = '\u{20C1}';
+
+/// اللاحقة كما تُعرض: مسافةٌ **غير فاصلة** ثمّ الرمز.
+///
+/// المسافة غير الفاصلة (`U+00A0`) مقصودة: المسافة العادية تسمح بانقسام
+/// المبلغ عن رمزه على سطرين، فيظهر الرمز وحده في بداية السطر التالي.
+const String _riyalSuffix = '\u{00A0}$riyalSign';
+
 /// Extensions للعملات
 extension CurrencyExtension on double {
   /// تنسيق كعملة مع فواصل الآلاف وخانتين عشريتين
@@ -54,6 +68,15 @@ extension CurrencyExtension on double {
     }
     return _withoutNegativeZero(NumberFormat('#,##0', 'en_US').format(this));
   }
+
+  /// [toCurrency] مُلحقاً برمز الريال: `12,345.67 ⃁`
+  ///
+  /// تُبنى على [toCurrency] لا تُعيد تنسيقها، فترث منها محوَ الصفر السالب
+  /// («-0.00 ⃁» رصيدٌ لا معنى له) وتوسيعَ ما فوق حدّ `int64`.
+  String get toRiyal => '$toCurrency$_riyalSuffix';
+
+  /// [toCurrencyNoDecimals] مُلحقاً برمز الريال: `12,345 ⃁`
+  String get toRiyalNoDecimals => '$toCurrencyNoDecimals$_riyalSuffix';
 }
 
 /// Extensions للأعداد الصحيحة
@@ -66,4 +89,14 @@ extension IntCurrencyExtension on int {
   /// مرادفٌ لـ`toCurrency` يُتيح نداءً واحداً على العدد صحيحاً كان أو عشرياً،
   /// فلا يضطرّ المستدعي إلى `.toDouble()` — وهي تفقد الدقّة فوق 2^53.
   String get toCurrencyNoDecimals => toCurrency;
+
+  /// [toCurrency] مُلحقاً برمز الريال: `12,345 ⃁`
+  ///
+  /// بلا خانات عشرية — فالعدد صحيحٌ أصلاً. ولمبلغٍ بالهللات استعمل
+  /// `double.toRiyal`.
+  String get toRiyal => '$toCurrency$_riyalSuffix';
+
+  /// مرادفٌ لـ[toRiyal]، يوازي [toCurrencyNoDecimals] فيُغني المستدعي عن
+  /// التمييز بين `int` و`double` عند النداء.
+  String get toRiyalNoDecimals => toRiyal;
 }

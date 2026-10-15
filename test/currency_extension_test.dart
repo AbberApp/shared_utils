@@ -326,4 +326,67 @@ void main() {
       expect(converted.toLatinDigits, 'المبلغ 500');
     });
   });
+
+  group('رمز الريال: toRiyal / toRiyalNoDecimals', () {
+    // اللاحقة تُبنى من الثابت لا تُكتب حرفياً في التوقّعات: محرف U+20C1 يظهر
+    // مربّعاً فارغاً في أكثر المحرّرات، فنصُّ التوقّع المكتوب بيدٍ قد يحمل
+    // محرفاً آخر يشبهه ويمرّ الاختبار على خطأ.
+    const String nbsp = '\u{00A0}';
+    const String suffix = '$nbsp$riyalSign';
+
+    test('الرمز هو U+20C1 نفسه لا ما يشبهه', () {
+      expect(riyalSign.runes.toList(), <int>[0x20C1]);
+      expect(riyalSign.length, 1);
+    });
+
+    test('double: خانتان عشريتان ثمّ اللاحقة', () {
+      expect(12345.67.toRiyal, '12,345.67$suffix');
+      expect(0.0.toRiyal, '0.00$suffix');
+      expect(0.5.toRiyal, '0.50$suffix');
+    });
+
+    test('double: بلا خانات عشرية', () {
+      expect(12345.67.toRiyalNoDecimals, '12,346$suffix');
+      expect(1000000.0.toRiyalNoDecimals, '1,000,000$suffix');
+    });
+
+    test('int: بلا خانات عشرية، والمرادف يطابقه', () {
+      expect(12345.toRiyal, '12,345$suffix');
+      expect(12345.toRiyalNoDecimals, 12345.toRiyal);
+      expect(0.toRiyal, '0$suffix');
+    });
+
+    test('السالب يحفظ إشارته قبل الرقم لا قبل الرمز', () {
+      expect((-1500.25).toRiyal, '-1,500.25$suffix');
+      expect((-250).toRiyal, '-250$suffix');
+    });
+
+    test('ترث محوَ الصفر السالب من toCurrency', () {
+      // «-0.00 ⃁» رصيدٌ لا معنى له ويُقلق المستخدم.
+      expect((-0.0).toRiyal, '0.00$suffix');
+      expect((-0.004).toRiyal, '0.00$suffix');
+      expect((-0.4).toRiyalNoDecimals, '0$suffix');
+    });
+
+    test('ترث توسيعَ ما فوق حدّ int64 من toCurrency', () {
+      expect(1e19.toRiyal, '10,000,000,000,000,000,000.00$suffix');
+      expect(1e21.toRiyalNoDecimals, '1,000,000,000,000,000,000,000$suffix');
+    });
+
+    test('اللاحقة بمسافةٍ غير فاصلة لا عادية', () {
+      // المسافة العادية تسمح بانقسام المبلغ عن رمزه على سطرين.
+      expect(99.0.toRiyal.contains(' $riyalSign'), isFalse);
+      expect(99.0.toRiyal.endsWith('$nbsp$riyalSign'), isTrue);
+    });
+
+    test('الناتج هو toCurrency نفسه مُلحقاً — لا إعادة تنسيق', () {
+      for (final double value in <double>[0, 1, -7.5, 1234.567, -999999.999]) {
+        expect(value.toRiyal, '${value.toCurrency}$suffix');
+        expect(
+          value.toRiyalNoDecimals,
+          '${value.toCurrencyNoDecimals}$suffix',
+        );
+      }
+    });
+  });
 }

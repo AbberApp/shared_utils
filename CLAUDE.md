@@ -170,6 +170,13 @@ DateTime.now().toChatHeaderDate   // 'd MMMM yyyy' بالعربي
 12345.67.toCurrency           // '12,345.67'
 12345.67.toCurrencyNoDecimals // '12,345'
 12345.toCurrency              // '12,345'
+
+// مع رمز الريال (U+20C1) — مسافةٌ غير فاصلة ثمّ الرمز
+12345.67.toRiyal              // '12,345.67 ⃁'
+12345.67.toRiyalNoDecimals    // '12,346 ⃁'
+12345.toRiyal                 // '12,345 ⃁'
+riyalSign                     // الرمز وحده
+// ❌ ممنوع: كتابة 'ر.س' أو الرمز حرفياً في الكود
 ```
 
 ### Formatters
