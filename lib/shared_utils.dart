@@ -104,6 +104,7 @@ export 'src/utils/parse_to_map.dart';
 // ═══════════════════════════════════════════════════════════════════════════
 
 export 'src/data/base_entity.dart';
+export 'src/data/either.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -188,8 +189,6 @@ export 'package:uuid/uuid.dart';
 //   استيراداً ملتبساً.
 // - `sentry_flutter` تُعرّف `User` و`Device` و`App` و`Scope`، وهي أسماء كيانات
 //   في تطبيقاتنا.
-// - `dartz` تُعرّف `State` (موناد الحالة) باسم صنف Flutter الذي يرثه كلّ ودجتٍ
-//   ذي حالة — تصديرها كاملةً يكسر كلّ `extends State<…>` في ملفٍّ يستورد المكتبة.
 // - `pointycastle` تُعرّف `Padding` (حشو التشفير) باسم ودجت Flutter نفسه.
 // - `audio_session` و`file_picker` و`basic_utils`: ما تستعمله التطبيقات منها
 //   فقط، لا عشرات الأنواع التي تجيء معه (و`basic_utils` تُعرّف `DateUtils`).
@@ -197,7 +196,6 @@ export 'package:uuid/uuid.dart';
 export 'package:audio_session/audio_session.dart'
     show AVAudioSession, AVAudioSessionPort, AVAudioSessionPortOverride, AVAudioSessionRouteChange;
 export 'package:basic_utils/basic_utils.dart' show CryptoUtils;
-export 'package:dartz/dartz.dart' show Either, Left, Right, Unit, unit;
 export 'package:file_picker/file_picker.dart' show FilePicker, FileType, PlatformFile;
 export 'package:intl/intl.dart' show DateFormat, NumberFormat;
 export 'package:sentry_flutter/sentry_flutter.dart' show Sentry, SentryNavigatorObserver;
