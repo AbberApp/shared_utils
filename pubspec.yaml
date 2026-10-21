@@ -125,5 +125,5 @@ dev_dependencies:
 
 
 
-  fake_async: any
+  fake_async: ^1.3.3
 flutter:
