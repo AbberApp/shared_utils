@@ -5,6 +5,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 
 import 'api_consumer.dart';
+import 'upload_file_name.dart';
 
 class DioConsumer implements ApiConsumer {
   final Dio client;
@@ -81,6 +82,14 @@ class DioConsumer implements ApiConsumer {
     client.options.sendTimeout = const Duration(seconds: 30);
   }
 
+  /// جسم الطلب: multipart حين يُطلب، أو حين يحمل الجسم ملفّاً ولو نُسي العلم
+  /// (ترميز `MultipartFile` JSON يرمي فلا يُرسَل شيء). وكلّ ملفٍّ يُرفع باسمٍ لا
+  /// يتجاوز [kMaxUploadFileNameLength] حرفاً — انظر [safeUploadFileName].
+  static Object? _data(Map<String, dynamic>? body, bool formDataIsEnabled) =>
+      formDataIsEnabled || containsUploadFile(body)
+          ? safeUploadFormData(body ?? const <String, dynamic>{})
+          : body;
+
   @override
   Future<Response<dynamic>> get(
     String path, {
@@ -104,9 +113,7 @@ class DioConsumer implements ApiConsumer {
     return await client.post(
       path,
       queryParameters: queryParameters,
-      data: formDataIsEnabled
-          ? FormData.fromMap(body ?? const <String, dynamic>{})
-          : body,
+      data: _data(body, formDataIsEnabled),
       options: Options(sendTimeout: timeout, receiveTimeout: timeout),
     );
   }
@@ -122,9 +129,7 @@ class DioConsumer implements ApiConsumer {
     return await client.put(
       path,
       queryParameters: queryParameters,
-      data: formDataIsEnabled
-          ? FormData.fromMap(body ?? const <String, dynamic>{})
-          : body,
+      data: _data(body, formDataIsEnabled),
       options: Options(sendTimeout: timeout, receiveTimeout: timeout),
     );
   }
@@ -140,9 +145,7 @@ class DioConsumer implements ApiConsumer {
     return await client.patch(
       path,
       queryParameters: queryParameters,
-      data: formDataIsEnabled
-          ? FormData.fromMap(body ?? const <String, dynamic>{})
-          : body,
+      data: _data(body, formDataIsEnabled),
       options: Options(sendTimeout: timeout, receiveTimeout: timeout),
     );
   }
@@ -179,7 +182,7 @@ class DioConsumer implements ApiConsumer {
     return await client.post(
       path,
       queryParameters: queryParameters,
-      data: FormData.fromMap(body),
+      data: safeUploadFormData(body),
       onSendProgress: onSendProgress,
       options: Options(sendTimeout: timeout, receiveTimeout: timeout),
     );
