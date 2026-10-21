@@ -3,7 +3,7 @@
 // `ShareService` نفسه ينادي قناةً أصليّة، فلا يُختبر بلا جهاز؛ أمّا `shareOrigin` فحسابٌ هندسيّ خالص:
 // مستطيل العنصر بإحداثيات الشاشة. وهو الجزء الذي يُخطئ فيه الناس — يمرّرون سياق الصفحة بدل سياق الزرّ،
 // أو يقرؤونه قبل أن يأخذ العنصر حجمه.
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_utils/shared_utils.dart';
 

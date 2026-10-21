@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// شريط «تحديث اختياريّ» دائم — كالتوست لكنّه يبقى ظاهرًا حتّى يضغط المستخدم
 /// «تحديث» أو يغلقه. يُعرض فوق التطبيق كلّه عبر [Overlay] و idempotent (لا يتكرّر).

@@ -1,3 +1,28 @@
+## 4.0.0
+
+* **الانتقال إلى `material_ui` و`cupertino_ui`** — مكتبتا التصميم الرسميّتان اللتان
+  فصلهما فريق فلاتر عن `package:flutter/material.dart` و`flutter/cupertino.dart`
+  (المجمّدتين عملياً منذ 2026-05). رُحّلت ملفّات المكتبة بالأداة الرسمية
+  `dart fix --apply --code=migrate_design_widgets`، وثلاثةٌ لا تحتاج Material صارت
+  على `flutter/widgets.dart`.
+
+  **كسرٌ سلوكيّ — التطبيق يجب أن يكون على material_ui أيضاً.** صنفا `Material` و`Theme`
+  و`MaterialLocalizations` في المكتبتين مختلفان: تطبيقٌ على flutter/material يحلّ 4.0.0
+  يجد `Theme.of` في SkeletonizerWidget وLoadMoreWidget وPaginatedListView يرجع إلى الثيم
+  الاحتياطيّ، و`RefreshIndicator` يطلب MaterialLocalizations الجديدة. فلا تُرقَّى المكتبة
+  في تطبيقٍ إلّا في كوميت ترحيله، ومعه في `app.dart`:
+  `...GlobalMaterialLocalizations.delegates` من material_ui (والمندوبات القديمة من
+  flutter_localizations ببادئة، حاجزاً لحزمٍ ما زالت على flutter/material).
+
+  **لماذا الآن.** `pinput` 7 مبنيّة على material_ui: داخل تطبيقٍ على flutter/material
+  ترمي في debug «No Material widget found» (فشلت شاشة الرمز في المحاكي)، وشريط اللصق
+  مهدّد في release.
+
+* `showToast` بسياق: الخطّ يُمرَّر صراحةً من سياق المستدعي، فـfluttertoast (ما زالت على
+  flutter/material) لم تعد تفرض خطّ الثيم الاحتياطيّ.
+* `material_ui: ^1.8.0`، و`cupertino_ui: ^1.0.2` (flutter_widget_from_html_core يقيّدها
+  بـ<1.1.0 في المدوّنة؛ البقيّة تحلّ 1.1.4)، والحدّان `sdk: ^3.13.0` و`flutter: >=3.47.0`.
+
 ## 3.9.0
 
 * **أسماء الملفّات المرفوعة لا تتجاوز ٩٠ حرفاً** — في كلّ رفعٍ يمرّ عبر

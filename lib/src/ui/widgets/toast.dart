@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 // [ToastGravity] يظهر في توقيع [showToast] العلنيّ، فيُصدَّر معه: وإلّا اضطُرّ
@@ -36,9 +36,14 @@ void showToast(
   // قبل أيّ فحصٍ للتركيب، فسياق شاشةٍ أُغلقت (النمط الشائع: احفظ ← توست ← pop)
   // يرمي "Looking up a deactivated widget's ancestor is unsafe".
   if (context != null && context.mounted) {
-    final IconData? effectiveIcon = icon ?? (success ? Icons.check_circle_rounded : null);
-    final Color effectiveIconColor = iconColor ?? (success ? _kToastSuccess : textColor);
+    final IconData? effectiveIcon =
+        icon ?? (success ? Icons.check_circle_rounded : null);
+    final Color effectiveIconColor =
+        iconColor ?? (success ? _kToastSuccess : textColor);
     final Duration toastDuration = Duration(seconds: isLong ? 4 : 2);
+    // fluttertoast على flutter/material: يلفّ الابن بـMaterial قديم فيرث خطّ الثيم
+    // الاحتياطيّ لا خطّ التطبيق (المبنيّ على material_ui). نأخذ الخطّ من سياق المستدعي.
+    final TextStyle ambient = DefaultTextStyle.of(context).style;
     final FToast fToast = FToast()..init(context);
     try {
       fToast.showToast(
@@ -68,7 +73,13 @@ void showToast(
               Flexible(
                 child: Text(
                   message,
-                  style: TextStyle(color: textColor, fontSize: 12.0, height: 1.5),
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 12.0,
+                    height: 1.5,
+                    fontFamily: ambient.fontFamily,
+                    fontFamilyFallback: ambient.fontFamilyFallback,
+                  ),
                 ),
               ),
             ],
@@ -147,13 +158,18 @@ const int _kReleaseRetries = 8;
 /// الغنيّ ومسار توست النظام. فتوستٌ نصّيّ من موضعٍ آخر (اختيار صورة، فتح
 /// واتساب…) يقع داخل نافذتنا يرفع العلم فيُتخطّى التحرير — ومحاولةٌ واحدة لا
 /// تكفي عندئذٍ. لذلك نعيد الكرّة كلّ ثانية بسقفٍ محدود بدل التخلّي عن التحرير.
-void _releaseToastContext(FToast fToast, BuildContext context, Duration toastDuration) {
+void _releaseToastContext(
+  FToast fToast,
+  BuildContext context,
+  Duration toastDuration,
+) {
   Timer(toastDuration + const Duration(seconds: 1), () {
     if (_tryReleaseToastContext(fToast, context)) return;
     int attempts = 0;
     Timer.periodic(const Duration(seconds: 1), (Timer timer) {
       attempts++;
-      if (_tryReleaseToastContext(fToast, context) || attempts >= _kReleaseRetries) {
+      if (_tryReleaseToastContext(fToast, context) ||
+          attempts >= _kReleaseRetries) {
         timer.cancel();
       }
     });

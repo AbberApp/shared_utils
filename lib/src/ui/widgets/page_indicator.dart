@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 /// مؤشر نقطي للصفحات مع انيميشن سلس
 class PageIndicator extends StatelessWidget {

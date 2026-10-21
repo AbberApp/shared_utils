@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 // كلّ رمزٍ يُذكر في هذا الملفّ يجب أن يصل من هنا وحده. فلو سقط تصديرٌ من
 // `lib/shared_utils.dart` — أو استُبدل اسمٌ عامّ — لم يمرّ هذا الملفّ عبر
 // المحلّل أصلاً، فيفشل قبل أن يُنفَّذ اختبارٌ واحد. ولهذا لا يُضاف هنا
-// `import 'package:flutter/material.dart'` ولا `package:dio/dio.dart`:
+// `import 'package:material_ui/material_ui.dart'` ولا `package:dio/dio.dart`:
 // إضافتها تُبطل ما نقيسه.
 import 'package:shared_utils/shared_utils.dart';
 

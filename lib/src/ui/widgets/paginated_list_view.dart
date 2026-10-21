@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'load_more_widget.dart';
 import 'skeletonizer_widget.dart';

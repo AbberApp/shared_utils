@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 3.9.0
+version: 4.0.0
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -11,8 +11,8 @@ environment:
   # الحدّان يعكسان ما تفرضه التبعيات فعلاً (in_app_update و fluttertoast)، لا قيمة
   # `flutter create` الافتراضيّة: حدٌّ أدنى كاذب يجعل pub يفشل باسم تبعيةٍ أخرى
   # بدل أن يقول إنّ المكتبة نفسها تحتاج أحدث. راجعهما كلّما رُفعت تبعيةٌ بحدٍّ أعلى.
-  sdk: ^3.12.0
-  flutter: ">=3.44.0"
+  sdk: ^3.13.0
+  flutter: ">=3.47.0"
 
 
 
@@ -92,10 +92,9 @@ dependencies:
   confetti: ^0.8.0
   animate_do: ^5.1.0
   showcaseview: ^5.1.0
-  # 6.0.2 لا 7.0.0: السابعة انتقلت إلى material_ui، ومؤلّفها يقول إنّ التطبيقات
-  # التي على package:flutter/material.dart تبقى على 6.x — وكلّ تطبيقاتنا عليها.
-  # جُرّبت: Pinput 7 داخل Scaffold من flutter/material يرمي «No Material widget
-  # found». تُرفع إلى 7 مع انتقال التطبيقات إلى material_ui، لا قبله.
+  # 7 مبنيّة على material_ui، ومنذ 4.0.0 المكتبة والتطبيقات عليها أيضاً. قبلها كان
+  # Pinput 7 داخل Scaffold من flutter/material يرمي في debug «No Material widget
+  # found» (صنفا Material مختلفان)، وشريط اللصق مهدّد في release.
   pinput: ^7.0.0
 
   # التخزين والإعداد
@@ -112,6 +111,13 @@ dependencies:
 
 
 
+
+  # مكتبتا التصميم الرسميّتان المنفصلتان عن فلاتر (flutter/packages) — بديل
+  # package:flutter/material.dart وflutter/cupertino.dart منذ 4.0.0.
+  material_ui: ^1.8.0
+  # ^1.0.2 لا ^1.1.4: flutter_widget_from_html_core (في المدوّنة) يقيّدها بـ<1.1.0،
+  # والتطبيقات الأخرى تحلّ أحدث نسخةٍ تلقائياً.
+  cupertino_ui: ^1.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -122,4 +128,5 @@ dev_dependencies:
 
 
 
+  fake_async: any
 flutter:
