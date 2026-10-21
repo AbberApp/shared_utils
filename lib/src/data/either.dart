@@ -4,7 +4,7 @@
 /// `Either` هناك يُنفّذ `TraversableMonadOps` فيجرّ `Monad` و`Applicative`
 /// و`Functor` و`Traversable` و`Foldable` وعملياتها، ومعها `map2`…`map20`
 /// التي تجرّ `Tuple2`…`Tuple20` — سبعة آلاف سطرٍ لم تستعمل التطبيقات منها
-/// إلّا `fold` و`getOrElse` و`isLeft` و`isRight`. والحزمة لم تُحدَّث منذ
+/// إلّا `fold` و`getOrElse` و`isLeft` و`isRight` و`map`. والحزمة لم تُحدَّث منذ
 /// 2021-12-03.
 ///
 /// **التواقيع مطابقةٌ لـ`dartz` حرفياً** كي لا يُمسّ سطرٌ في التطبيقات
@@ -58,6 +58,10 @@ sealed class Either<L, R> {
 
   /// دالّةٌ لا getter — مطابقةً لـ`dartz`.
   bool isRight() => fold((_) => false, (_) => true);
+
+  /// يحوّل قيمة اليمين بـ[f] ويُبقي اليسار كما هو — توقيع `dartz` نفسه.
+  Either<L, R2> map<R2>(R2 Function(R r) f) =>
+      fold((L l) => Left<L, R2>(l), (R r) => Right<L, R2>(f(r)));
 }
 
 /// الفرع اليساريّ — الخطأ عادةً.

@@ -22,6 +22,8 @@
 * **لا Cupertino في المكتبة:** مؤشّر `LoadMoreWidget` صار `CircularProgressIndicator`
   (قطر 20 داخل الدائرة نفسها 44) بدل `CupertinoActivityIndicator`، ولا اعتماد على
   `cupertino_ui`.
+* `Either.map` بتوقيع `dartz` — سقطت في 3.8.0، فتوقّف تجميع إدارة وصال
+  (`fetch_flow_tree_use_case.dart`) منذها.
 * `material_ui: ^1.8.0`، والحدّان `sdk: ^3.13.0` و`flutter: >=3.47.0`.
 
 ## 3.9.0

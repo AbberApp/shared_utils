@@ -92,6 +92,19 @@ void main() {
       expect(const Left<String, int>('ف').value, 'ف');
       expect(const Right<String, int>(4).value, 4);
     });
+
+    test('map يحوّل اليمين ويُبقي اليسار بلا استدعاء', () {
+      final Either<String, String> right = const Right<String, int>(4).map((v) => 'رقم $v');
+      expect(right, const Right<String, String>('رقم 4'));
+
+      int calls = 0;
+      final Either<String, String> left = const Left<String, int>('خطأ').map((v) {
+        calls++;
+        return '$v';
+      });
+      expect(left, const Left<String, String>('خطأ'));
+      expect(calls, 0);
+    });
   });
 
   group('المساواة — كما في dartz: على القيمة بلا وسيطَي النوع', () {
