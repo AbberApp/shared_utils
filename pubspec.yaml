@@ -112,12 +112,9 @@ dependencies:
 
 
 
-  # مكتبتا التصميم الرسميّتان المنفصلتان عن فلاتر (flutter/packages) — بديل
-  # package:flutter/material.dart وflutter/cupertino.dart منذ 4.0.0.
+  # مكتبة التصميم الرسميّة المنفصلة عن فلاتر (flutter/packages) — بديل
+  # package:flutter/material.dart منذ 4.0.0. ولا Cupertino في المكتبة إطلاقاً.
   material_ui: ^1.8.0
-  # ^1.0.2 لا ^1.1.4: flutter_widget_from_html_core (في المدوّنة) يقيّدها بـ<1.1.0،
-  # والتطبيقات الأخرى تحلّ أحدث نسخةٍ تلقائياً.
-  cupertino_ui: ^1.0.2
 dev_dependencies:
   flutter_test:
     sdk: flutter

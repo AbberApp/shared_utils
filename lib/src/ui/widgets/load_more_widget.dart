@@ -1,4 +1,3 @@
-import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../../data/base_entity.dart';
@@ -107,12 +106,13 @@ class LoadMoreIndicatorWidget extends StatelessWidget {
             minWidth: 44.0,
             minHeight: 44.0,
           ),
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(12.0),
           decoration: BoxDecoration(
             color: backgroundColor ?? colorScheme.secondary,
             borderRadius: BorderRadius.circular(100),
           ),
-          child: CupertinoActivityIndicator(
+          child: CircularProgressIndicator(
+            strokeWidth: 2.0,
             color: color ?? colorScheme.primary,
           ),
         ),

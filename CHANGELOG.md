@@ -1,8 +1,7 @@
 ## 4.0.0
 
-* **الانتقال إلى `material_ui` و`cupertino_ui`** — مكتبتا التصميم الرسميّتان اللتان
-  فصلهما فريق فلاتر عن `package:flutter/material.dart` و`flutter/cupertino.dart`
-  (المجمّدتين عملياً منذ 2026-05). رُحّلت ملفّات المكتبة بالأداة الرسمية
+* **الانتقال إلى `material_ui`** — مكتبة التصميم الرسميّة التي فصلها فريق فلاتر عن
+  `package:flutter/material.dart` (المجمّدة عملياً منذ 2026-05). رُحّلت ملفّات المكتبة بالأداة الرسمية
   `dart fix --apply --code=migrate_design_widgets`، وثلاثةٌ لا تحتاج Material صارت
   على `flutter/widgets.dart`.
 
@@ -20,8 +19,10 @@
 
 * `showToast` بسياق: الخطّ يُمرَّر صراحةً من سياق المستدعي، فـfluttertoast (ما زالت على
   flutter/material) لم تعد تفرض خطّ الثيم الاحتياطيّ.
-* `material_ui: ^1.8.0`، و`cupertino_ui: ^1.0.2` (flutter_widget_from_html_core يقيّدها
-  بـ<1.1.0 في المدوّنة؛ البقيّة تحلّ 1.1.4)، والحدّان `sdk: ^3.13.0` و`flutter: >=3.47.0`.
+* **لا Cupertino في المكتبة:** مؤشّر `LoadMoreWidget` صار `CircularProgressIndicator`
+  (قطر 20 داخل الدائرة نفسها 44) بدل `CupertinoActivityIndicator`، ولا اعتماد على
+  `cupertino_ui`.
+* `material_ui: ^1.8.0`، والحدّان `sdk: ^3.13.0` و`flutter: >=3.47.0`.
 
 ## 3.9.0
 

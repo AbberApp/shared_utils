@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -289,7 +288,7 @@ void main() {
       );
 
       expect(find.byType(LoadMoreIndicatorWidget), findsNothing);
-      expect(find.byType(CupertinoActivityIndicator), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(tester.getSize(find.byType(LoadMoreWidget)).height, 40.0);
     });
 
@@ -301,7 +300,7 @@ void main() {
         _app(const Center(child: LoadMoreWidget(isLoadMore: true))),
       );
 
-      expect(find.byType(CupertinoActivityIndicator), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
       final Padding padding = tester.widget<Padding>(
         find
             .descendant(
@@ -357,8 +356,8 @@ void main() {
       expect((box.decoration! as BoxDecoration).color, _scheme.secondary);
       expect(
         tester
-            .widget<CupertinoActivityIndicator>(
-              find.byType(CupertinoActivityIndicator),
+            .widget<CircularProgressIndicator>(
+              find.byType(CircularProgressIndicator),
             )
             .color,
         _scheme.primary,
@@ -390,8 +389,8 @@ void main() {
       expect((box.decoration! as BoxDecoration).color, bg);
       expect(
         tester
-            .widget<CupertinoActivityIndicator>(
-              find.byType(CupertinoActivityIndicator),
+            .widget<CircularProgressIndicator>(
+              find.byType(CircularProgressIndicator),
             )
             .color,
         fg,
@@ -637,7 +636,7 @@ void main() {
       expect(find.textContaining('عنصر'), findsNothing);
       expect(listItemCount(tester), 1, reason: 'ذيل LoadMoreWidget فقط');
       expect(find.byType(LoadMoreWidget), findsOneWidget);
-      expect(find.byType(CupertinoActivityIndicator), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     });
 
     testWidgets('الحالة الفارغة لا تعرض RefreshIndicator إن لم يُمرَّر', (
@@ -841,7 +840,7 @@ void main() {
         build(items: const <int>[1], isLoadMore: true, canLoadMore: true),
       );
 
-      expect(find.byType(CupertinoActivityIndicator), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
 
     testWidgets('متحكّم خارجي لا يُتخلَّص منه عند إزالة القائمة', (
