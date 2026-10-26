@@ -171,6 +171,9 @@ export 'package:ip_country_lookup/ip_country_lookup.dart';
 export 'package:json_annotation/json_annotation.dart';
 export 'package:jwt_decoder/jwt_decoder.dart';
 export 'package:lottie/lottie.dart';
+// مكتبة التصميم كاملةً — ومعها flutter/widgets التي تُعيد تصديرها. فاستيراد البرميل
+// وحده يكفي الشاشة: لا `package:material_ui/…` في تطبيق، ولا إعلانٌ لها في pubspec.
+export 'package:material_ui/material_ui.dart';
 export 'package:open_file/open_file.dart';
 export 'package:path_provider/path_provider.dart';
 export 'package:photo_view/photo_view.dart';

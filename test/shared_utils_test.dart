@@ -234,6 +234,22 @@ void main() {
       );
     });
 
+    test('material_ui تصل كاملةً — ومعها flutter/widgets — عبر استيرادٍ واحد', () {
+      // منذ 4.1.0 لا تعلنها التطبيقات ولا تستوردها: الشاشة تكتفي بالبرميل.
+      expect(MaterialApp, isNotNull);
+      expect(Scaffold, isNotNull);
+      expect(ThemeData, isNotNull);
+      expect(GlobalMaterialLocalizations.delegates, isNotEmpty);
+      expect(Icons.arrow_back, isA<IconData>());
+      expect(Text, isNotNull);
+      expect(TextDirection.rtl, isNotNull);
+      expect(
+        _read('lib/shared_utils.dart'),
+        contains("export 'package:material_ui/material_ui.dart';"),
+        reason: 'material_ui صارت تُصدَّر بقيد — والتطبيقات تعتمد على اكتمالها',
+      );
+    });
+
     test('حزم 3.7.0 تصل بأنواعها الرئيسية عبر استيرادٍ واحد', () {
       // الحالة والحقن
       expect(BlocProvider, isNotNull);
