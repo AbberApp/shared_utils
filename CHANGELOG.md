@@ -1,3 +1,13 @@
+## 4.1.1
+
+* chore(deps): كلّ تبعيات المكتبة على أحدث إصدار — `sentry_flutter ^10.2.0`
+  و`file_picker ^13.3.0` و`solar_community_icons ^1.2.0`، ومعها 11 حزمةً غير مباشرة
+  (`flutter pub upgrade`).
+
+  وما بقي دون الأحدث محجوبٌ لا يُبلَغ اليوم: `material_color_utilities` و`test_api`
+  يثبّتهما Flutter 3.47.8 نفسه (آخر مستقرّ)، و`cross_file` و`xml` تحجبهما قيود
+  حزمٍ أخرى.
+
 ## 4.1.0
 
 * feat(exports): **`material_ui` تُصدَّر من البرميل كاملةً** — ومعها `flutter/widgets`

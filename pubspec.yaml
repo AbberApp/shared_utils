@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 4.1.0
+version: 4.1.1
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -22,7 +22,7 @@ dependencies:
 
   # Network
   audio_session: ^0.2.4
-  sentry_flutter: ^10.1.0
+  sentry_flutter: ^10.2.0
   bloc: ^9.2.1
   # أحدث إصدار، وفرضٌ على كلّ التطبيقات: تُعلَن هنا وحدها وتُصدَّر من البرميل.
   equatable: ^3.0.0
@@ -35,7 +35,7 @@ dependencies:
   web_socket_channel: ^3.0.3
 
   # File & Image Pickers
-  file_picker: ^13.1.0
+  file_picker: ^13.3.0
   image_picker: ^1.2.4
   image_cropper: ^13.0.0
 
@@ -83,7 +83,7 @@ dependencies:
   get_it: ^9.3.0
 
   # الواجهة
-  solar_community_icons: ^1.1.1
+  solar_community_icons: ^1.2.0
   flutter_svg: ^2.3.0
   lottie: ^3.6.1
   photo_view: ^0.15.0
