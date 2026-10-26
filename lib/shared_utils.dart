@@ -92,6 +92,19 @@ export 'src/services/update/optional_update_banner.dart';
 export 'src/services/update/guarded_navigator.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Payment - سترايب بواجهتنا (على نمط HyperPaySDK)
+// ═══════════════════════════════════════════════════════════════════════════
+//
+// أنواعنا وحدها تُصدَّر، لا `flutter_stripe` كاملةً: فيها صنفٌ اسمه `Card`
+// و`Address` و`BillingDetails`، فتصديرها يجعل كلّ `Card(...)` في التطبيقات ملتبساً.
+
+export 'src/services/payment/stripe/stripe_card_info.dart';
+export 'src/services/payment/stripe/stripe_config.dart';
+export 'src/services/payment/stripe/stripe_error_messages.dart';
+export 'src/services/payment/stripe/stripe_sdk.dart';
+export 'src/services/payment/stripe/stripe_transaction_result.dart';
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Utils - الأدوات المساعدة
 // ═══════════════════════════════════════════════════════════════════════════
 

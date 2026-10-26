@@ -1,3 +1,39 @@
+## 4.2.0
+
+* feat(payment): **`StripeSDK` — سترايب بواجهتنا لا بواجهته**، على نمط `HyperPaySDK` في
+  التطبيقات: `StripeConfig` (من ردّ الخادم، بلا مفتاح سرّيّ) · `StripeSDK().initialize` ·
+  `submitCardPayment` (بطاقة من نموذج التطبيق نفسه، و3DS أصليّ من SDK سترايب) ·
+  `submitGooglePay` / `submitApplePay` · `StripeTransactionResult` بحالات
+  `succeeded / processing / error / canceled` · `StripeErrorMessages` بالعربية.
+  المكوّن لا يعرف خادم أيّ تطبيق: يأخذ `clientSecret` ويُرجع النتيجة، والحكم للخادم.
+
+  **ثمنه على كلّ مستهلك (قرار المالك: في المكتبة لكلّ التطبيقات):**
+  - أندرويد: قواعد R8 في `android/app/proguard-rules.pro` قبل الترقية إلى 4.2.0:
+    ```proguard
+    # flutter_stripe (README، الخطوة 7)
+    -dontwarn com.stripe.android.pushProvisioning.**
+    -dontwarn com.google.android.gms.tapandpay.**
+    -dontwarn kotlinx.parcelize.Parceler$DefaultImpls
+    -dontwarn kotlinx.parcelize.Parceler
+    -dontwarn kotlinx.parcelize.Parcelize
+    -keep class com.stripe.** { *; }
+    ```
+  - أندرويد: إيقاف `lintVital` لوحدة `stripe_android` في `android/build.gradle.kts` (قبل
+    `allprojects`)، وإلّا فشل `assembleRelease` بـ«Could not find
+    com.google.android.gms:play-services-tapandpay:18.8.0» — حزمةٌ لا تنشرها جوجل:
+    ```kotlin
+    subprojects {
+        if (name == "stripe_android") {
+            tasks.matching { it.name.startsWith("lintVital") }.configureEach { enabled = false }
+        }
+    }
+    ```
+    ثبت ببناء إصدار فعليّ (المدوّنة، `FlutterActivity`): فشل بدونه ونجح به وأصناف سترايب داخل الحزمة.
+  - iOS: `NSCameraUsageDescription` في `Info.plist` (ماسح البطاقات في `StripePaymentSheet`).
+  - من يدفع بسترايب: `FlutterFragmentActivity` وسمة `AppCompat`/`MaterialComponents` للنشاط.
+    ومن لا يدفع لا يلزمه شيء غير ما سبق: الإضافة مع `FlutterActivity` تسجّل خطأً ولا تنهار.
+  - `flutter_stripe` **لا تُصدَّر كاملةً** (فيها `Card` و`Address`)، أنواعنا وحدها.
+
 ## 4.1.1
 
 * chore(deps): كلّ تبعيات المكتبة على أحدث إصدار — `sentry_flutter ^10.2.0`

@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 4.1.1
+version: 4.2.0
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -105,6 +105,16 @@ dependencies:
   pointycastle: ^4.0.0
   basic_utils: ^5.8.2
   credit_card_type_detector: ^3.0.0
+  # ⚠️ استثناءٌ مقصود من شرط «لا كود أصليّ» أعلاه — بقرار المالك (2026-10-26):
+  # سترايب في المكتبة لكلّ التطبيقات، بواجهتنا (StripeSDK). ثمنه على كلّ مستهلك:
+  # • أندرويد: قواعد R8 لأصناف push provisioning في proguard-rules.pro، وإلّا فشل
+  #   بناء الإصدار بـ«Missing classes detected while running R8».
+  # • أندرويد: إيقاف lintVital لوحدة stripe_android (play-services-tapandpay غير منشورة).
+  # • iOS: StripePaymentSheet يحمل ماسح بطاقاتٍ بالكاميرا، فيلزم
+  #   NSCameraUsageDescription في Info.plist وإن لم يدفع التطبيق بسترايب.
+  # • FlutterActivity لا تنهار: الإضافة تسجّل initializationError ولا تفشل إلّا عند
+  #   استدعاء سترايب؛ ومن يدفع بها يحتاج FlutterFragmentActivity وسمة AppCompat/Material.
+  flutter_stripe: ^14.2.0
   jwt_decoder: ^2.0.1
   uuid: ^4.6.0
   ip_country_lookup: ^1.0.3

@@ -264,6 +264,34 @@ DeviceInfoManager deviceInfo;
 
 ---
 
+### Payment — سترايب بواجهتنا (4.2.0)
+
+```dart
+// 1) الخادم أنشأ الدفعة وردّ بكتلة `stripe` (client_secret + publishable_key + …)
+await StripeSDK().initialize(
+  StripeConfig.fromServer(data['stripe'], urlScheme: 'abber', merchantName: 'عبر'),
+);
+
+// 2) بطاقة من نموذج التطبيق نفسه (الحقول نفسها التي تُرسل لهايبرباي)
+final result = await StripeSDK().submitCardPayment(
+  clientSecret: data['stripe']['client_secret'],
+  card: StripeCardInfo(cardNumber: n, cvv: c, expiryMonth: m, expiryYear: y),
+);
+// أو محفظة المنصّة
+final result = await StripeSDK().submitGooglePay(clientSecret: s, currencyCode: 'SAR');
+
+// 3) الحكم للخادم دائماً
+if (result.needsServerCheck) { /* استطلع حالة الدفع من الخادم */ }
+else if (result.isCanceled) { /* لا خطأ — أعد شاشة الاختيار */ }
+else { showToast(result.message!); }
+```
+
+- لا مفتاح سرّيّ في التطبيق إطلاقاً، والمنشور يُقرأ من ردّ الخادم لا من ثابت.
+- **كلّ تطبيقٍ يرقّي إلى 4.2.0 يلزمه:** قواعد R8، وإيقاف `lintVital` لوحدة `stripe_android`،
+  و`NSCameraUsageDescription` — النصوص في `CHANGELOG.md`. والتسعة الحاليّة جُهّزت كلّها (2026-10-26).
+
+---
+
 ## قواعد الاستخدام
 
 1. **import واحد يكفي:**
