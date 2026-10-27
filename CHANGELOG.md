@@ -1,3 +1,10 @@
+## 4.3.0
+
+* feat(payment): `StripeSDK().submitSavedCardPayment` — بطاقة سترايب محفوظة تُدفع
+  بإعادة كتابة الـCVV فقط، كبطاقات هايبرباي المحفوظة. الخادم يُنشئ النيّة على
+  `payment_method` البطاقة مع `require_cvc_recollection`، ويردّ `stripe.payment_method`؛
+  والـCVV يذهب إلى سترايب مباشرةً (`PaymentMethodParams.cardFromMethodId`) لا إلى الخادم.
+
 ## 4.2.0
 
 * feat(payment): **`StripeSDK` — سترايب بواجهتنا لا بواجهته**، على نمط `HyperPaySDK` في

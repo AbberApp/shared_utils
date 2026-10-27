@@ -11,6 +11,7 @@ import 'package:flutter_stripe/flutter_stripe.dart'
         PaymentIntent,
         PaymentIntentsStatus,
         PaymentMethodData,
+        PaymentMethodDataCardFromMethod,
         PaymentMethodParams,
         PlatformPayConfirmParams,
         Stripe,
@@ -35,6 +36,8 @@ import 'stripe_transaction_result.dart';
 /// ```dart
 /// StripeSDK().initialize(StripeConfig.fromServer(data['stripe'], urlScheme: 'abber', merchantName: 'عبر'));
 /// final result = await StripeSDK().submitCardPayment(clientSecret: secret, card: card);
+/// // بطاقة محفوظة: الخادم ردّ `stripe.payment_method`، والعميل أعاد كتابة الـCVV.
+/// final again = await StripeSDK().submitSavedCardPayment(clientSecret: secret, paymentMethodId: pm, cvv: cvv);
 /// if (result.needsServerCheck) add(const CheckPaymentStatusEvent());
 /// ```
 class StripeSDK {
@@ -81,6 +84,27 @@ class StripeSDK {
         data: const PaymentMethodParams.card(paymentMethodData: PaymentMethodData()),
       );
     });
+  }
+
+  /// بطاقة محفوظة عند سترايب (`paymentMethodId` من ردّ الخادم) — العميل يعيد كتابة
+  /// الـCVV فقط كما في هايبرباي، ويذهب مباشرةً إلى سترايب لا إلى خادمنا.
+  Future<StripeTransactionResult> submitSavedCardPayment({
+    required String clientSecret,
+    required String paymentMethodId,
+    required String cvv,
+  }) async {
+    final String cvc = cvv.trim();
+    if (paymentMethodId.isEmpty || cvc.length < 3) {
+      return StripeTransactionResult.error(message: 'بيانات البطاقة غير مكتملة', errorCode: 'incomplete_card');
+    }
+    return _run(
+      () => Stripe.instance.confirmPayment(
+        paymentIntentClientSecret: clientSecret,
+        data: PaymentMethodParams.cardFromMethodId(
+          paymentMethodData: PaymentMethodDataCardFromMethod(paymentMethodId: paymentMethodId, cvc: cvc),
+        ),
+      ),
+    );
   }
 
   /// Google Pay بورقته الأصليّة. `currencyCode` عملة النيّة (SAR / AED / USD).
