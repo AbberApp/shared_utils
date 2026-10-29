@@ -1,3 +1,10 @@
+## 4.4.0
+
+* feat(currency): إضافة رمز الدرهم الإماراتي الرسمي `U+20C3`، وواجهات
+  `toDirham` و`toDirhamNoDecimals`، واختيار رمز العملة تلقائياً من رقم الهاتف
+  عبر `toCurrencyByPhone` و`toCurrencyNoDecimalsByPhone`؛ الرقم الإماراتي يعرض
+  الدرهم، وغيره يعرض الريال السعودي، من دون تحويل قيمة المبلغ.
+
 ## 4.3.0
 
 * feat(payment): `StripeSDK().submitSavedCardPayment` — بطاقة سترايب محفوظة تُدفع

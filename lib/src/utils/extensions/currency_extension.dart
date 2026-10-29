@@ -1,5 +1,7 @@
 import 'package:intl/intl.dart';
 
+import '../phone/intl_phone_utils.dart';
+
 /// أكبر مقدارٍ يُنسّقه `NumberFormat` بأمان: فوق 2^63 يمرّ العدد عنده على
 /// `int64` فيُقصّ صامتاً إلى 9,223,372,036,854,775,807 بلا استثناء ولا تحذير.
 /// ما فوق هذا الحدّ يُنسَّق يدوياً عبر `BigInt` (وكلّ عددٍ عشريٍّ فوقه صحيحٌ
@@ -45,11 +47,26 @@ String _withoutNegativeZero(String formatted) {
 /// يعتمد على ترميز الملفّ ولا على ما يراه المحرّر.
 const String riyalSign = '\u{20C1}';
 
+/// رمز الدرهم الإماراتي الرسميّ — `U+20C3 UAE DIRHAM SIGN`.
+const String dirhamSign = '\u{20C3}';
+
 /// اللاحقة كما تُعرض: مسافةٌ **غير فاصلة** ثمّ الرمز.
 ///
 /// المسافة غير الفاصلة (`U+00A0`) مقصودة: المسافة العادية تسمح بانقسام
 /// المبلغ عن رمزه على سطرين، فيظهر الرمز وحده في بداية السطر التالي.
 const String _riyalSuffix = '\u{00A0}$riyalSign';
+const String _dirhamSuffix = '\u{00A0}$dirhamSign';
+
+/// لاحقة العملة التي يقررها بلد رقم الهاتف.
+///
+/// الدرهم للإمارات (`AE`) والريال السعودي كافتراضي لكل رقم آخر أو رقم غير
+/// صالح. هذا اختيار للرمز فقط؛ لا يحوّل قيمة المبلغ.
+String currencySuffixForPhone(String? phoneNumber) {
+  if (phoneNumber == null) return _riyalSuffix;
+  return IntlPhoneUtils.getCountryCode(phoneNumber) == 'AE'
+      ? _dirhamSuffix
+      : _riyalSuffix;
+}
 
 /// Extensions للعملات
 extension CurrencyExtension on double {
@@ -77,6 +94,20 @@ extension CurrencyExtension on double {
 
   /// [toCurrencyNoDecimals] مُلحقاً برمز الريال: `12,345 ⃁`
   String get toRiyalNoDecimals => '$toCurrencyNoDecimals$_riyalSuffix';
+
+  /// [toCurrency] مُلحقاً برمز الدرهم الإماراتي: `12,345.67 ⃃`
+  String get toDirham => '$toCurrency$_dirhamSuffix';
+
+  /// [toCurrencyNoDecimals] مُلحقاً برمز الدرهم الإماراتي: `12,345 ⃃`
+  String get toDirhamNoDecimals => '$toCurrencyNoDecimals$_dirhamSuffix';
+
+  /// تنسيق المبلغ بالرمز المناسب لبلد رقم الهاتف، دون تحويل المبلغ.
+  String toCurrencyByPhone(String? phoneNumber) =>
+      '$toCurrency${currencySuffixForPhone(phoneNumber)}';
+
+  /// تنسيق المبلغ بلا كسور بالرمز المناسب لبلد رقم الهاتف، دون تحويل المبلغ.
+  String toCurrencyNoDecimalsByPhone(String? phoneNumber) =>
+      '$toCurrencyNoDecimals${currencySuffixForPhone(phoneNumber)}';
 }
 
 /// Extensions للأعداد الصحيحة
@@ -99,4 +130,18 @@ extension IntCurrencyExtension on int {
   /// مرادفٌ لـ[toRiyal]، يوازي [toCurrencyNoDecimals] فيُغني المستدعي عن
   /// التمييز بين `int` و`double` عند النداء.
   String get toRiyalNoDecimals => toRiyal;
+
+  /// [toCurrency] مُلحقاً برمز الدرهم الإماراتي: `12,345 ⃃`
+  String get toDirham => '$toCurrency$_dirhamSuffix';
+
+  /// مرادفٌ لـ[toDirham] للأعداد الصحيحة.
+  String get toDirhamNoDecimals => toDirham;
+
+  /// تنسيق المبلغ بالرمز المناسب لبلد رقم الهاتف، دون تحويل المبلغ.
+  String toCurrencyByPhone(String? phoneNumber) =>
+      '$toCurrency${currencySuffixForPhone(phoneNumber)}';
+
+  /// مرادفٌ للعدد الصحيح بلا كسور.
+  String toCurrencyNoDecimalsByPhone(String? phoneNumber) =>
+      toCurrencyByPhone(phoneNumber);
 }

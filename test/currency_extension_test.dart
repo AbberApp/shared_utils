@@ -12,6 +12,41 @@ import 'package:shared_utils/shared_utils.dart';
 /// - lib/src/utils/extensions/currency_extension.dart
 /// - lib/src/utils/extensions/arabic_digits_extension.dart
 void main() {
+  group('عملات العرض', () {
+    test('الدرهم الإماراتي على double وint', () {
+      expect(1234.5.toDirham, '1,234.50\u00A0$dirhamSign');
+      expect(1234.5.toDirhamNoDecimals, '1,235\u00A0$dirhamSign');
+      expect(1234.toDirham, '1,234\u00A0$dirhamSign');
+      expect(1234.toDirhamNoDecimals, '1,234\u00A0$dirhamSign');
+    });
+
+    test('رموز العملتين متاحة عبر البرميل', () {
+      expect(riyalSign, '\u{20C1}');
+      expect(dirhamSign, '\u{20C3}');
+    });
+
+    test('اختيار الرمز من رقم الهاتف لا يغيّر قيمة المبلغ', () {
+      expect(
+        1234.5.toCurrencyByPhone('+971501234567'),
+        '1,234.50\u00A0$dirhamSign',
+      );
+      expect(
+        1234.5.toCurrencyByPhone('+966501234567'),
+        '1,234.50\u00A0$riyalSign',
+      );
+      expect(
+        1234.5.toCurrencyByPhone('+201012345678'),
+        '1,234.50\u00A0$riyalSign',
+      );
+      expect(
+        1234.toCurrencyNoDecimalsByPhone('00971501234567'),
+        '1,234\u00A0$dirhamSign',
+      );
+      expect(1234.5.toCurrencyByPhone(null), '1,234.50\u00A0$riyalSign');
+      expect(1234.5.toCurrencyByPhone(''), '1,234.50\u00A0$riyalSign');
+    });
+  });
+
   group('toCurrency على double — الأساس', () {
     test('الصفر يُعرض بخانتين عشريّتين لا مجرّد «0»', () {
       expect(0.0.toCurrency, '0.00');
@@ -382,10 +417,7 @@ void main() {
     test('الناتج هو toCurrency نفسه مُلحقاً — لا إعادة تنسيق', () {
       for (final double value in <double>[0, 1, -7.5, 1234.567, -999999.999]) {
         expect(value.toRiyal, '${value.toCurrency}$suffix');
-        expect(
-          value.toRiyalNoDecimals,
-          '${value.toCurrencyNoDecimals}$suffix',
-        );
+        expect(value.toRiyalNoDecimals, '${value.toCurrencyNoDecimals}$suffix');
       }
     });
   });
