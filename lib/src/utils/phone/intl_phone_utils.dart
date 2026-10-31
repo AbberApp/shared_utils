@@ -346,7 +346,12 @@ class IntlPhoneUtils {
     for (final int rune in str.runes) {
       // علامات التشكيل المنفصلة (من نصٍّ بصيغة NFD، أو من toLowerCase للتركية
       // حيث تصير 'İ' حرفاً ونقطةً فوقه) تُسقَط وحدها.
-      if (rune >= 0x0300 && rune <= 0x036F) continue;
+      if ((rune >= 0x0300 && rune <= 0x036F) ||
+          (rune >= 0x064B && rune <= 0x065F) ||
+          rune == 0x0670 ||
+          rune == 0x0640) {
+        continue;
+      }
       buffer.write(_diacritics[rune] ?? String.fromCharCode(rune));
     }
 
@@ -362,6 +367,7 @@ class IntlPhoneUtils {
   /// المقابل البسيط ← الحروف التي تُردّ إليه: Latin-1 وLatin Extended-A وفاصلتا
   /// الرومانية السفليّتان (ș ț). مقابلٌ من حرفين مسموح (æ → ae).
   static const Map<String, String> _diacriticGroups = {
+    'ا': 'أإآٱ',
     'A': 'ÀÁÂÃÄÅĀĂĄ',
     'a': 'àáâãäåāăą',
     'AE': 'Æ',
