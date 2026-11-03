@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'dart:ui' show FlutterView;
+
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:flutter/semantics.dart' show SemanticsService;
 import 'package:material_ui/material_ui.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
@@ -98,6 +102,7 @@ void showToast(
       );
       return;
     }
+    _announceToast(message);
     _releaseToastContext(fToast, context, toastDuration);
     return;
   }
@@ -119,6 +124,8 @@ void _showSystemToast(
   required Color backgroundColor,
   required Color textColor,
 }) {
+  // توست النظام على أندرويد ينطقه TalkBack بنفسه، فالإعلان هنا يكرّره.
+  if (defaultTargetPlatform != TargetPlatform.android) _announceToast(message);
   // الحزمة ترفع العلم الساكن [Fluttertoast.isCurrentlyShowingToast] قبل نداء
   // القناة ولا تخفضه إلّا بعد نجاحه؛ فإن رمى النداء (MissingPluginException على
   // سطح المكتب وفي الاختبارات، أو أيّ عطبٍ في القناة) بقي العلم مرفوعاً أبداً.
@@ -142,6 +149,21 @@ void _showSystemToast(
       return null;
     }),
   );
+}
+
+/// ينطق الرسالة للقارئ الصوتي: التوست نصّ عابر لا يصل إليه التركيز، فبدون هذا تبدو
+/// رسالة الخطأ كأن الزرّ لا يعمل. لا يُسقط مسار المستدعي أبداً.
+void _announceToast(String message) {
+  try {
+    final FlutterView? view = WidgetsBinding.instance.platformDispatcher.implicitView;
+    if (view == null) return;
+    unawaited(
+      SemanticsService.sendAnnouncement(view, message, TextDirection.rtl)
+          .catchError((Object _) {}),
+    );
+  } on Object {
+    return;
+  }
 }
 
 /// سقف محاولات التحرير الإضافية بعد المحاولة الأولى (ثانية بين كلّ محاولتين).
