@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 4.4.2
+version: 4.4.3
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -22,7 +22,7 @@ dependencies:
 
   # Network
   audio_session: ^0.2.4
-  sentry_flutter: ^10.2.0
+  sentry_flutter: ^10.3.0
   bloc: ^9.2.1
   # أحدث إصدار، وفرضٌ على كلّ التطبيقات: تُعلَن هنا وحدها وتُصدَّر من البرميل.
   equatable: ^3.0.0
@@ -35,7 +35,7 @@ dependencies:
   web_socket_channel: ^3.0.3
 
   # File & Image Pickers
-  file_picker: ^13.3.0
+  file_picker: ^13.3.2
   image_picker: ^1.2.4
   image_cropper: ^13.0.0
 
@@ -48,7 +48,7 @@ dependencies:
 
   # Utils
   intl: ^0.20.3
-  phone_numbers_parser: ^9.0.28
+  phone_numbers_parser: ^9.0.29
   url_launcher: ^6.3.3
   share_plus: ^13.3.1
   # open_file لا open_filex: الأصل المُصان ويدعم SPM عبر open_file_ios،
@@ -83,9 +83,9 @@ dependencies:
   get_it: ^9.3.0
 
   # الواجهة
-  solar_community_icons: ^1.2.0
-  flutter_svg: ^2.3.0
-  lottie: ^3.6.1
+  solar_community_icons: ^1.3.0
+  flutter_svg: ^2.3.2
+  lottie: ^3.8.2
   photo_view: ^0.15.0
   grouped_list: ^6.0.0
   custom_timer: ^0.2.3
@@ -119,22 +119,24 @@ dependencies:
   uuid: ^4.6.0
   ip_country_lookup: ^1.0.3
 
-
-
-
   # مكتبة التصميم الرسميّة المنفصلة عن فلاتر (flutter/packages) — بديل
   # package:flutter/material.dart منذ 4.0.0. ولا Cupertino في المكتبة إطلاقاً.
   # ومنذ 4.1.0 تُعلَن هنا وحدها وتُصدَّر من البرميل: لا تعلنها التطبيقات.
-  material_ui: ^1.8.0
+  material_ui: ^1.11.0
+
+
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
   flutter_lints: ^6.0.0
   # محاكاة للاختبارات: طبقتا الشبكة والأجهزة تعتمدان على plugins لا تعمل
   # في بيئة الاختبار، فبدون محاكاة تبقيان خارج التغطية تماماً.
   mocktail: ^1.0.5
 
-
-
   fake_async: ^1.3.3
+
+
+
 flutter:
