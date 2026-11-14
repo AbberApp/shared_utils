@@ -1,3 +1,18 @@
+## 4.4.4
+
+* refactor(jwt): **إسقاط حزمة `jwt_decoder`** — `JwtDecoder` محلّيّ في
+  `lib/src/utils/jwt_decoder.dart` بالتواقيع الستّ نفسها، فلا يُمسّ سطرٌ في
+  التطبيقات. الحزمة 86 سطراً بلا تبعية، لم تُحدَّث منذ خمس سنوات، وقيدها
+  `sdk: <3.0.0` يستثني Dart 3 على الورق؛ ولم يُستعمل منها إلّا `isExpired`.
+
+* fix(jwt): **`isExpired` لا ترمي أبداً.** كانت ترمي على رمزٍ معطوب
+  (`FormatException`) أو بلا `exp` (`NoSuchMethodError` — `Error` لا يلتقطه
+  `on Exception`)، وتُستدعى في `onRequest` للمعترِض على كلّ طلب وفي إقلاع
+  `Abber-App` و`Manam` و`abber_admin` — فرمزٌ تالفٌ في التخزين كان يُسقط كلّ طلبٍ
+  شبكيّ أو يُعلّق شاشة الإقلاع. الآن: المعطوب ← `true` (يُسجَّل الخروج)،
+  وبلا `exp` ← `false` (الحقل اختياريّ في RFC 7519). وسائر الدوالّ ترمي
+  `FormatException` وحدها بدل `NoSuchMethodError` و`TypeError`.
+
 ## 4.4.2
 
 * fix(a11y): `showToast` ينطق رسالته للقارئ الصوتي (VoiceOver وTalkBack): كانت رسائل

@@ -112,6 +112,7 @@ export 'src/utils/helpers.dart';
 export 'src/utils/delay_handler.dart';
 export 'src/utils/phone/intl_phone_utils.dart';
 export 'src/utils/parse_to_map.dart';
+export 'src/utils/jwt_decoder.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Entities - البيانات
@@ -182,7 +183,6 @@ export 'package:grouped_list/grouped_list.dart';
 export 'package:hive_ce_flutter/adapters.dart';
 export 'package:ip_country_lookup/ip_country_lookup.dart';
 export 'package:json_annotation/json_annotation.dart';
-export 'package:jwt_decoder/jwt_decoder.dart';
 export 'package:lottie/lottie.dart';
 // مكتبة التصميم كاملةً — ومعها flutter/widgets التي تُعيد تصديرها. فاستيراد البرميل
 // وحده يكفي الشاشة: لا `package:material_ui/…` في تطبيق، ولا إعلانٌ لها في pubspec.

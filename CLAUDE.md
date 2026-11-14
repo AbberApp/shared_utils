@@ -260,6 +260,11 @@ await AppUpdateChecker.instance.checkForUpdate(
 
 // DeviceInfoManager
 DeviceInfoManager deviceInfo;
+
+// JwtDecoder — قراءة رمز JWT بلا تحقّقٍ من التوقيع
+if (JwtDecoder.isExpired(refreshToken)) logout(); // لا ترمي: المعطوب ← true، وبلا exp ← false
+JwtDecoder.tryDecode(token)?['user_id'];          // null بدل الرمي
+// ❌ ممنوع: حزمة jwt_decoder — أُسقطت في 4.4.4
 ```
 
 ---

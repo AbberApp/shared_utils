@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 4.4.3
+version: 4.4.4
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -22,7 +22,7 @@ dependencies:
 
   # Network
   audio_session: ^0.2.4
-  sentry_flutter: ^10.3.0
+  sentry_flutter: ^10.4.0
   bloc: ^9.2.1
   # أحدث إصدار، وفرضٌ على كلّ التطبيقات: تُعلَن هنا وحدها وتُصدَّر من البرميل.
   equatable: ^3.0.0
@@ -35,7 +35,7 @@ dependencies:
   web_socket_channel: ^3.0.3
 
   # File & Image Pickers
-  file_picker: ^13.3.2
+  file_picker: ^13.3.3
   image_picker: ^1.2.4
   image_cropper: ^13.0.0
 
@@ -84,7 +84,7 @@ dependencies:
 
   # الواجهة
   solar_community_icons: ^1.3.0
-  flutter_svg: ^2.3.2
+  flutter_svg: ^2.4.0
   lottie: ^3.8.2
   photo_view: ^0.15.0
   grouped_list: ^6.0.0
@@ -114,10 +114,9 @@ dependencies:
   #   NSCameraUsageDescription في Info.plist وإن لم يدفع التطبيق بسترايب.
   # • FlutterActivity لا تنهار: الإضافة تسجّل initializationError ولا تفشل إلّا عند
   #   استدعاء سترايب؛ ومن يدفع بها يحتاج FlutterFragmentActivity وسمة AppCompat/Material.
-  flutter_stripe: ^14.2.0
-  jwt_decoder: ^2.0.1
+  flutter_stripe: ^15.0.0
   uuid: ^4.6.0
-  ip_country_lookup: ^1.0.3
+  ip_country_lookup: ^1.1.0
 
   # مكتبة التصميم الرسميّة المنفصلة عن فلاتر (flutter/packages) — بديل
   # package:flutter/material.dart منذ 4.0.0. ولا Cupertino في المكتبة إطلاقاً.
