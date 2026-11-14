@@ -300,6 +300,7 @@ void main() {
         'basic_utils': 'src/utils/crypto_utils.dart (4.5.0)',
         'credit_card_type_detector': 'src/utils/credit_card_type.dart (4.5.0)',
         'custom_timer': 'src/ui/widgets/custom_timer.dart (4.5.0)',
+        'ip_country_lookup': 'src/network/ip_country_lookup.dart (4.6.0)',
       };
       final String pubspec = _read('pubspec.yaml');
       final String barrel = _read('lib/shared_utils.dart');

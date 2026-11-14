@@ -275,8 +275,12 @@ final RSAPublicKey key = CryptoUtils.rsaPublicKeyFromPem(pem); // المعطوب
 // detectCCType — فيزا وماستركارد وحدهما، بعد فحص «مدى» في التطبيق
 detectCCType(number).contains(CreditCardType.visa());
 
+// IpCountryLookup — رمز دولة الاتّصال لحقل الهاتف؛ الفشل null لا 'N/A'، ولا يرمي
+final String? code = (await IpCountryLookup().getIpLocationData()).countryCode;
+
 // ❌ ممنوع: الحزم dartz وjwt_decoder وanimate_do وbasic_utils
-//    وcredit_card_type_detector وcustom_timer — أُسقطت ولها بدائل هنا بأسمائها؛
+//    وcredit_card_type_detector وcustom_timer وip_country_lookup — أُسقطت ولها
+//    بدائل هنا بأسمائها؛
 //    واختبار البرميل يُفشل نفسه إن عادت.
 ```
 

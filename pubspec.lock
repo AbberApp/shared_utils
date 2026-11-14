@@ -565,14 +565,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.20.3"
-  ip_country_lookup:
-    dependency: "direct main"
-    description:
-      name: ip_country_lookup
-      sha256: "978c1d2b8954e1a9dc6bfab9293ef59111a71d42e43eb14ebbaa3b18df1b62f2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
   isolate_channel:
     dependency: transitive
     description:

@@ -116,6 +116,7 @@ export 'src/utils/parse_to_map.dart';
 export 'src/utils/jwt_decoder.dart';
 export 'src/utils/crypto_utils.dart';
 export 'src/utils/credit_card_type.dart';
+export 'src/network/ip_country_lookup.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Entities - البيانات
@@ -180,7 +181,6 @@ export 'package:get_it/get_it.dart';
 export 'package:grouped_list/grouped_list.dart';
 // adapters.dart تشمل hive_flutter.dart وhive_ce نفسها.
 export 'package:hive_ce_flutter/adapters.dart';
-export 'package:ip_country_lookup/ip_country_lookup.dart';
 export 'package:json_annotation/json_annotation.dart';
 export 'package:lottie/lottie.dart';
 // مكتبة التصميم كاملةً — ومعها flutter/widgets التي تُعيد تصديرها. فاستيراد البرميل
