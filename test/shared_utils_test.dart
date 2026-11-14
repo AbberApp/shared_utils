@@ -266,7 +266,6 @@ void main() {
       expect(GroupedListView, isNotNull);
       expect(CustomTimerController, isNotNull);
       expect(ConfettiController, isNotNull);
-      expect(FadeIn, isNotNull);
       expect(Showcase, isNotNull);
       expect(Pinput, isNotNull);
       // التخزين والإعداد
@@ -282,17 +281,36 @@ void main() {
       expect(IpCountryLookup, isNotNull);
     });
 
-    test('dartz وpointycastle وbasic_utils تُصدَّر بـshow لا كاملةً', () {
-      // dartz تُعرّف State، وpointycastle تُعرّف Padding، وbasic_utils تُعرّف
-      // DateUtils — أسماء ودجات Flutter وأدواته نفسها.
+    test('pointycastle تُصدَّر بـshow لا كاملةً', () {
+      // تُعرّف Padding (حشو التشفير) باسم ودجت Flutter نفسه.
+      expect(
+        RegExp("export\\s+'package:pointycastle/[^']+'\\s*;")
+            .hasMatch(_read('lib/shared_utils.dart')),
+        isFalse,
+        reason: 'pointycastle صارت تُصدَّر كاملةً من البرميل — قيّدها بـshow',
+      );
+    });
+
+    test('الحزم المُسقطة لا تعود — بدائلها في lib/src بالأسماء نفسها', () {
+      // على الإعلانات والتصدير لا على التعليقات: CHANGELOG وتوثيق البدائل يذكرانها.
+      const Map<String, String> dropped = <String, String>{
+        'dartz': 'src/data/either.dart (3.8.0)',
+        'jwt_decoder': 'src/utils/jwt_decoder.dart (4.4.4)',
+        'animate_do': 'لا بديل — حركات فلاتر نفسها (4.5.0)',
+        'basic_utils': 'src/utils/crypto_utils.dart (4.5.0)',
+        'credit_card_type_detector': 'src/utils/credit_card_type.dart (4.5.0)',
+        'custom_timer': 'src/ui/widgets/custom_timer.dart (4.5.0)',
+      };
+      final String pubspec = _read('pubspec.yaml');
       final String barrel = _read('lib/shared_utils.dart');
-      for (final String pkg in <String>['dartz', 'pointycastle', 'basic_utils']) {
+      dropped.forEach((String pkg, String replacement) {
         expect(
-          RegExp("export\\s+'package:$pkg/[^']+'\\s*;").hasMatch(barrel),
+          RegExp('^  $pkg:', multiLine: true).hasMatch(pubspec),
           isFalse,
-          reason: '«$pkg» صار يُصدَّر كاملاً من البرميل — قيّده بـshow',
+          reason: '«$pkg» أُسقطت؛ بديلها: $replacement',
         );
-      }
+        expect(barrel, isNot(contains('package:$pkg/')), reason: replacement);
+      });
     });
 
     test('equatable تصل — وحالتان من صنفين مختلفين لا تتساويان', () {

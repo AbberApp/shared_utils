@@ -73,6 +73,7 @@ export 'src/ui/widgets/responsive_grid_view.dart';
 export 'src/ui/widgets/skeletonizer_widget.dart';
 export 'src/ui/widgets/load_more_widget.dart';
 export 'src/ui/widgets/paginated_list_view.dart';
+export 'src/ui/widgets/custom_timer.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Device Info - معلومات الجهاز
@@ -113,6 +114,8 @@ export 'src/utils/delay_handler.dart';
 export 'src/utils/phone/intl_phone_utils.dart';
 export 'src/utils/parse_to_map.dart';
 export 'src/utils/jwt_decoder.dart';
+export 'src/utils/crypto_utils.dart';
+export 'src/utils/credit_card_type.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Entities - البيانات
@@ -165,13 +168,9 @@ export 'src/services/monitoring/sentry_noise_filter.dart';
 // ولا تُضف `open_filex` مكان `open_file`: الأولى بلا `Package.swift` فتُبقي
 // CocoaPods حيّةً في كلّ مشروعٍ يستعملها.
 
-export 'package:animate_do/animate_do.dart';
 export 'package:bloc_concurrency/bloc_concurrency.dart';
 export 'package:confetti/confetti.dart';
 export 'package:connectivity_plus/connectivity_plus.dart';
-export 'package:credit_card_type_detector/credit_card_type_detector.dart';
-export 'package:credit_card_type_detector/models.dart';
-export 'package:custom_timer/custom_timer.dart';
 export 'package:dio/dio.dart';
 export 'package:equatable/equatable.dart';
 export 'package:flutter_bloc/flutter_bloc.dart';
@@ -207,12 +206,11 @@ export 'package:uuid/uuid.dart';
 // - `sentry_flutter` تُعرّف `User` و`Device` و`App` و`Scope`، وهي أسماء كيانات
 //   في تطبيقاتنا.
 // - `pointycastle` تُعرّف `Padding` (حشو التشفير) باسم ودجت Flutter نفسه.
-// - `audio_session` و`file_picker` و`basic_utils`: ما تستعمله التطبيقات منها
-//   فقط، لا عشرات الأنواع التي تجيء معه (و`basic_utils` تُعرّف `DateUtils`).
+// - `audio_session` و`file_picker`: ما تستعمله التطبيقات منها فقط، لا عشرات
+//   الأنواع التي تجيء معه.
 
 export 'package:audio_session/audio_session.dart'
     show AVAudioSession, AVAudioSessionPort, AVAudioSessionPortOverride, AVAudioSessionRouteChange;
-export 'package:basic_utils/basic_utils.dart' show CryptoUtils;
 export 'package:file_picker/file_picker.dart' show FilePicker, FileType, PlatformFile;
 export 'package:intl/intl.dart' show DateFormat, NumberFormat;
 export 'package:sentry_flutter/sentry_flutter.dart' show Sentry, SentryNavigatorObserver;

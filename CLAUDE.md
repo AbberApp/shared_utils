@@ -148,6 +148,11 @@ SkeletonizerWidget(
 showToast('تم الحفظ بنجاح');
 showToast('حدث خطأ', backgroundColor: AppColors.error);
 // ❌ ممنوع: ScaffoldMessenger.showSnackBar()
+
+// CustomTimer — عدّاد إعادة إرسال الرمز وموعد البثّ، بالزمن الحقيقيّ ولو أُطفئت الحركات
+_timer = CustomTimerController(vsync: this, begin: const Duration(seconds: 35), end: Duration.zero);
+CustomTimer(controller: _timer, builder: (state, time) => Text('${time.minutes}:${time.seconds}'));
+// dispose: _timer.dispose();
 ```
 
 ### Extensions
@@ -264,7 +269,15 @@ DeviceInfoManager deviceInfo;
 // JwtDecoder — قراءة رمز JWT بلا تحقّقٍ من التوقيع
 if (JwtDecoder.isExpired(refreshToken)) logout(); // لا ترمي: المعطوب ← true، وبلا exp ← false
 JwtDecoder.tryDecode(token)?['user_id'];          // null بدل الرمي
-// ❌ ممنوع: حزمة jwt_decoder — أُسقطت في 4.4.4
+// CryptoUtils — مفتاح RSA العامّ من PEM (SubjectPublicKeyInfo أو PKCS#1)
+final RSAPublicKey key = CryptoUtils.rsaPublicKeyFromPem(pem); // المعطوب ← FormatException
+
+// detectCCType — فيزا وماستركارد وحدهما، بعد فحص «مدى» في التطبيق
+detectCCType(number).contains(CreditCardType.visa());
+
+// ❌ ممنوع: الحزم dartz وjwt_decoder وanimate_do وbasic_utils
+//    وcredit_card_type_detector وcustom_timer — أُسقطت ولها بدائل هنا بأسمائها؛
+//    واختبار البرميل يُفشل نفسه إن عادت.
 ```
 
 ---
