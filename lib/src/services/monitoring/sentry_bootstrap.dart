@@ -1,5 +1,6 @@
 import 'dart:developer';
 
+import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../../device/device_info_manager.dart';
@@ -32,6 +33,18 @@ abstract final class SentryBootstrap {
   /// عشر ثوانٍ: أطول بكثير من التهيئة السليمة (أجزاء من الثانية)، وأقصر
   /// بكثير من صبر المستخدم على شاشة إقلاعٍ لا تتحرّك.
   static const Duration _initTimeout = Duration(seconds: 10);
+
+  /// أدنى مدّة توقّفٍ تُسجَّل «App Hang» على iOS — خمس ثوانٍ لا ثانيتان.
+  ///
+  /// الافتراضيّ (٢ ث) ملأ اللوحات بتوقّفاتٍ من ٣–٤ ثوانٍ لا سطرَ منها في
+  /// كودنا: لوحة المفاتيح تنتظر مهامّ الإكمال التلقائيّ داخل UIKit، ونداء
+  /// الحافظة المتزامن إلى خادم النظام، وتفعيل جلسة الصوت عند CallKit — قيس
+  /// على `flutter-abber` 2026-11-22. أمّا ما يتجاوز الخمس فيصل كما هو.
+  static const Duration appHangTimeout = Duration(seconds: 5);
+
+  /// هل إبلاغ التوقّفات موقوفٌ الآن؟ يجعل الإيقاف والاستئناف متساويَي الأثر:
+  /// نداءٌ ثانٍ لا يصل الطبقة الأصليّة.
+  static bool _appHangTrackingPaused = false;
 
   /// يُهيّئ Sentry ثمّ يُشغّل التطبيق.
   ///
@@ -74,6 +87,7 @@ abstract final class SentryBootstrap {
           // استنتجه Sentry من وضع البناء، فتُنسب أعطاب التطوير إلى الإنتاج.
           if (environment != null) options.environment = environment;
           options.tracesSampleRate = tracesSampleRate;
+          options.appHangTimeoutInterval = appHangTimeout;
 
           // مرشّح الضجيج: يُسقط ما لا نملك إصلاحه — انقطاع الشبكة، وأخطاء
           // خوادم الأطراف الثالثة، ومحتوىً ذهب ولا يعود. وكل خطأ في كودنا يمرّ.
@@ -163,6 +177,44 @@ abstract final class SentryBootstrap {
       Sentry.configureScope((Scope scope) => scope.setUser(null));
     } on Object catch (_) {}
   }
+
+  /// يوقف إبلاغ توقّفات الواجهة على iOS — طوال مكالمةٍ صوتية.
+  ///
+  /// في المكالمة يُطفئ مستشعر القرب الشاشةَ عند الأذن، فتتوقّف الإطارات
+  /// والخيط الرئيسيّ خامل، فيعدّها Sentry «App Hang Fully Blocked» بطول
+  /// المكالمة كلّها. وهذا كان أطول ما في لوحة `flutter-abber`: ٣٠٩–٥٦٧ ثانية،
+  /// كلّها تبدأ بعد ثوانٍ من فتح شاشة المكالمة، والخيط الرئيسيّ فيها ينتظر
+  /// في `mach_msg` بلا عمل.
+  ///
+  /// يُنادى عند بدء المكالمة ويقابله [resumeAppHangTracking] عند نهايتها.
+  /// تكميليّة: تفشل صامتةً، ولا أثر لها على أندرويد ولا حين لم يُهيَّأ Sentry.
+  static Future<void> pauseAppHangTracking() async {
+    if (!_supportsAppHangTracking || _appHangTrackingPaused) return;
+    _appHangTrackingPaused = true;
+    try {
+      await SentryFlutter.pauseAppHangTracking();
+    } on Object catch (_) {}
+  }
+
+  /// يستأنف ما أوقفه [pauseAppHangTracking] — عند انتهاء المكالمة.
+  static Future<void> resumeAppHangTracking() async {
+    if (!_supportsAppHangTracking || !_appHangTrackingPaused) return;
+    _appHangTrackingPaused = false;
+    try {
+      await SentryFlutter.resumeAppHangTracking();
+    } on Object catch (_) {}
+  }
+
+  /// تتبّع التوقّفات في Sentry لـ iOS وmacOS وحدهما؛ وعلى أندرويد ينادي
+  /// `SentryFlutter` تأكيداً يرمي في وضع التطوير، فلا يُنادى هناك أصلاً.
+  static bool get _supportsAppHangTracking =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS);
+
+  /// يعيد حالة الإيقاف إلى أوّلها — للاختبارات وحدها.
+  @visibleForTesting
+  static void debugResetAppHangTracking() => _appHangTrackingPaused = false;
 }
 
 /// يختم كلّ حدث بوسوم التطبيق الثابتة الممرَّرة مرّةً عند التهيئة.
