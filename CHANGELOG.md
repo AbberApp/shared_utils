@@ -1,3 +1,24 @@
+## 4.8.0
+
+* chore(deps): **كلّ التبعيات المباشرة على أحدث إصدار** (Flutter 3.50.1 / Dart 3.14.0).
+* fix(deps): `connectivity_plus` عاد إلى ^7.3.1 كما ينصّ تعليقه — رفعُه إلى ^7.3.2 في
+  «تحديث الإصدارات» (800155f) كان رجوعاً يُفشل حلّ تبعيات كلّ تطبيق فيه `geolocator`
+  (مسكني): `geolocator_linux` 0.2.6 و`geoclue` 0.1.1 يثبّتان dbus ^0.7.3 (البلاغ
+  Baseflow/flutter-geolocator#1824 مفتوح). و^7.3.1 لا يمنع 7.3.2 حيث يسعها المحلِّل.
+  - `image_cropper` ^13.0.0 ← **^14.0.0** (كبير): لا تغيير في الواجهة — كسرُه الوحيد رفعُ
+    حدّ Dart إلى ^3.11، ومعه في iOS تبعية `FlutterFramework` لـ SPM التي يطلبها فلاتر
+    3.41+. `ImagePickerManager.cropImage` كما هي.
+  - حدودٌ دنيا رُفعت إلى المحلول: `sentry_flutter` ^10.6.0، `bloc` ^9.2.2،
+    `file_picker` ^13.4.1، `fluttertoast` ^10.0.3، `flutter_svg` ^2.5.0،
+    `hive_ce_flutter` ^2.6.0، `flutter_dotenv` ^6.0.2، `material_ui` ^1.11.1.
+  - `hive_ce_flutter` 2.6.0 يحسب مجاميع التحقّق بـ zlib عبر خطّاف بناء (native assets):
+    على iOS وأندرويد يربط `zlib` النظام ديناميكياً، فلا كود C يُترجَم ولا يُضاف إلى
+    التطبيقات (يُترجَم على ويندوز وحده).
+  - ⚠️ باقٍ دون الأحدث لأنّ غيرنا يقيّده: `cross_file` 0.3.5+5 (0.4.0 —
+    `file_picker` 13.4.1 و`share_plus` 13.3.1 و`image_picker`/`file_selector` على
+    ^0.3.x)، و`xml` 7.0.1 (7.1.0 — `vector_graphics_compiler` 1.3.7 يثبّت `<=7.0.1`)،
+    و`material_color_utilities` 0.13.0 و`test_api` 0.7.14 (يثبّتهما SDK فلاتر).
+
 ## 4.7.0
 
 * fix(sentry): **توقّفات iOS الكاذبة لم تعد تملأ اللوحة.** قيس على `flutter-abber`
