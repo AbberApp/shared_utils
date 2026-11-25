@@ -1,7 +1,7 @@
 name: shared_utils
 description: "مكتبة أدوات مشتركة للمشاريع - تتضمن معالجة API، extensions، formatters، وأدوات مساعدة"
 
-version: 4.8.0
+version: 4.8.1
 
 homepage: https://github.com/AbberApp/shared_utils
 
@@ -11,7 +11,7 @@ environment:
   # الحدّان يعكسان ما تفرضه التبعيات فعلاً (in_app_update و fluttertoast)، لا قيمة
   # `flutter create` الافتراضيّة: حدٌّ أدنى كاذب يجعل pub يفشل باسم تبعيةٍ أخرى
   # بدل أن يقول إنّ المكتبة نفسها تحتاج أحدث. راجعهما كلّما رُفعت تبعيةٌ بحدٍّ أعلى.
-  sdk: ^3.13.0
+  sdk: ^3.14.0
   flutter: ">=3.47.0"
 
 
